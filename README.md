@@ -1,1 +1,52 @@
-# workout
+# Tyson Push-Up
+
+A mobile-first trainer for the Tyson push-up: a continuous squat-to-push-up. Learn the rep, run a session, and log the build toward 250 a day. Everything stays in the browser. There is no account and no backend.
+
+## Run it
+
+```bash
+npm install
+npm run dev
+```
+
+Open the URL Vite prints (usually `http://localhost:5173`).
+
+```bash
+npm test          # plan math, streaks, backups
+npm run build     # typecheck + static build in dist/
+npm run preview   # serve the production build
+```
+
+## What’s in the app
+
+- **Learn** — crouch, dive, bottom, and the snap back, with form cues, mistakes, muscles, the 9-week plan, easier and harder versions, and safety notes.
+- **Demo** — the three trainer photos loop as one rep, timed to the 1.5s / 1.75s / 2s / 3s tempo, with the phase name and cue on each beat. Switch to **Steps** to tap through and read the full cue. Swipe, the side arrows, or the left and right arrow keys.
+- **Train** — today’s plan stage or a custom target. Tap to count, or a tempo pacer that counts, ticks, and (optionally) vibrates once per rep. Rest timer between sets, then a finish screen.
+- **Log** — sessions in `localStorage` (`tyson-pushup-v1`): streaks, weekly totals, bests, progress toward 250, badges, a chart, edit, and delete. Export or import a JSON backup.
+- **PWA** — installable, and the production build caches the app shell and photos for offline use.
+
+## Optional film
+
+The photo loop is the demo. If you later add a full-rep video, drop it in as `public/demo.mp4` and rebuild. A **Film** control shows up on the demo and plays it in the same frame. With no file, that control is absent.
+
+## Deploy
+
+The app is a static Vite build. Routes use a hash (`/#/learn`) so any static host can serve it.
+
+### Vercel
+
+Import the repo. Framework preset: Vite. Build command: `npm run build`. Output: `dist`. `vercel.json` records the same settings.
+
+### GitHub Pages
+
+Project sites live under `/<repo>/`. Build with that base, then publish `dist`:
+
+```bash
+VITE_BASE=/workout/ npm run build
+```
+
+Use your repository name in place of `workout`. User sites at the domain root can use the default `npm run build`.
+
+## Notes
+
+Warm up, stop for sharp pain, and treat the plan as training guidance rather than medical advice. Teens should stay on the early stages. Wrist, shoulder, or back issues belong with a physio first.

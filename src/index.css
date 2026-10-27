@@ -1,0 +1,143 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-display: 'Bebas Neue', Impact, sans-serif;
+  --font-sans: 'Outfit', ui-sans-serif, system-ui, sans-serif;
+  --color-ink: #070708;
+  --color-panel: #141416;
+  --color-panel-2: #1c1b1f;
+  --color-line: #2e2c31;
+  --color-cream: #f4efe6;
+  --color-mute: #a39c93;
+  --color-blood: #b3121b;
+  --color-ember: #ff3140;
+  --color-gold: #e6a100;
+  --color-good: #3dbe6a;
+  --animate-punch: punch 0.28s ease-out;
+  --animate-rise: rise 0.32s ease-out;
+  --animate-page: page 0.35s ease-out;
+}
+
+@keyframes punch {
+  0% {
+    transform: scale(0.94);
+  }
+  45% {
+    transform: scale(1.06);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes page {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+    background: #070708;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    background:
+      radial-gradient(900px 420px at 100% -10%, rgba(179, 18, 27, 0.28), transparent 55%),
+      radial-gradient(700px 380px at -20% 10%, rgba(179, 18, 27, 0.12), transparent 50%),
+      #070708;
+    color: #f4efe6;
+    font-family: var(--font-sans);
+    text-rendering: optimizeLegibility;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    overflow-x: hidden;
+  }
+
+  #root {
+    min-height: 100dvh;
+  }
+
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    outline: 2px solid #ff3140;
+    outline-offset: 3px;
+  }
+
+  ::selection {
+    background: #b3121b;
+    color: #fff;
+  }
+
+  input[type='number']::-webkit-inner-spin-button,
+  input[type='number']::-webkit-outer-spin-button {
+    margin: 0;
+    -webkit-appearance: none;
+  }
+
+  input[type='number'] {
+    appearance: textfield;
+    -moz-appearance: textfield;
+  }
+
+  dialog {
+    width: min(100%, 36rem);
+    max-height: min(92dvh, 760px);
+    margin: auto auto 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+  }
+
+  dialog::backdrop {
+    background: rgba(0, 0, 0, 0.72);
+  }
+
+  @media (min-width: 768px) {
+    dialog {
+      margin: auto;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      scroll-behavior: auto !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
