@@ -68,11 +68,13 @@ export function Shell() {
           </nav>
           <div className="mt-auto grid gap-3">
             <NavLink
-              to="/account"
-              onClick={(event) => guardClick(event, dirty, () => setPending('/account'))}
-              className={({ isActive }) =>
-                `rounded-2xl px-3 py-2 text-sm font-semibold uppercase tracking-[0.16em] ${isActive ? 'bg-blood text-white' : 'text-mute hover:text-cream'}`
-              }
+              to="/"
+              end
+              onClick={(event) => {
+                guardClick(event, dirty, () => setPending('/'))
+                window.setTimeout(() => document.getElementById('login')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
+              }}
+              className="rounded-2xl px-3 py-2 text-sm font-semibold uppercase tracking-[0.16em] text-mute hover:text-cream"
             >
               Account
             </NavLink>

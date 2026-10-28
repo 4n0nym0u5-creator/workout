@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { LoginPanel } from '../components/LoginPanel'
 import { NudgeCard, StepUpCard } from '../components/Notices'
 import { PhaseReel } from '../components/PhaseReel'
 import { RepChart } from '../components/RepChart'
@@ -26,6 +27,12 @@ export function Home() {
   const streak = currentStreak(sessions, now)
   const week = weekReps(sessions, now)
   const best = bestDay(sessions).reps
+
+  useEffect(() => {
+    if (window.location.hash.includes('login')) {
+      window.setTimeout(() => document.getElementById('login')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80)
+    }
+  }, [])
 
   return (
     <Page title="Home">
@@ -60,6 +67,10 @@ export function Home() {
           Start workout
         </Button>
       </section>
+
+      <div className="mt-4">
+        <LoginPanel compact />
+      </div>
 
       <div className="mt-4 grid gap-3">
         {showNudge && nudge ? (

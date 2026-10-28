@@ -169,7 +169,10 @@ export function Progress() {
           user={user}
           status={syncStatus}
           busy={syncBusy}
-          onLogin={() => navigate('/account')}
+          onLogin={() => {
+            navigate('/')
+            window.setTimeout(() => document.getElementById('login')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
+          }}
           onSync={async () => {
             setSyncBusy(true)
             try {
