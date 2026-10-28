@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { formatDay } from '../lib/dates'
+import { clampIsoDate, formatDay, localDate } from '../lib/dates'
 import type { Difficulty, Session, SetLog } from '../lib/types'
 import { Button } from './ui'
 
@@ -56,9 +56,11 @@ export function SessionEditor({
 
   if (!session || !draft) return <dialog ref={dialogRef} onClose={onClose} />
 
+  const today = localDate(new Date())
   const total = draft.sets.reduce((sum, set) => sum + set.completed, 0)
   const valid =
     /^\d{4}-\d{2}-\d{2}$/.test(draft.date) &&
+    draft.date <= today &&
     draft.sets.length > 0 &&
     draft.sets.every((set) => Number.isInteger(set.completed) && set.completed >= 0 && set.completed <= 999 && set.target >= 0)
 
@@ -84,14 +86,15 @@ export function SessionEditor({
         onSubmit={(event) => {
           event.preventDefault()
           if (!valid) return
+          const nextDate = clampIsoDate(draft.date, '2000-01-01', today)
           onSave({
             ...session,
-            date: draft.date,
+            date: nextDate,
             notes: draft.notes.trim().slice(0, 280),
             sets: draft.sets,
             totalReps: total,
             difficulty: draft.difficulty,
-            completedAt: shiftTime(session.completedAt, draft.date),
+            completedAt: shiftTime(session.completedAt, nextDate),
           })
         }}
       >
@@ -104,7 +107,8 @@ export function SessionEditor({
           <input
             type="date"
             value={draft.date}
-            onChange={(event) => setDraft({ ...draft, date: event.target.value })}
+            max={today}
+            onChange={(event) => setDraft({ ...draft, date: clampIsoDate(event.target.value, '2000-01-01', today) })}
             className="mt-1 h-12 w-full rounded-xl border border-line bg-ink px-3 text-cream"
           />
         </label>

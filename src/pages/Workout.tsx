@@ -10,7 +10,7 @@ import { nextStage } from '../content/guide'
 import { lineForFinish } from '../content/lines'
 import { useStore } from '../context/Store'
 import { beep, vibrate } from '../lib/audio'
-import { formatClock, localDate } from '../lib/dates'
+import { completedAtFor, formatClock, localDate } from '../lib/dates'
 import { dayTotals, freshBadges, shouldCelebrate, stageSessions, stepUpReady } from '../lib/stats'
 import type { Session, SetLog, WorkoutPlan } from '../lib/types'
 import { Button } from '../components/ui'
@@ -146,10 +146,10 @@ export function Workout() {
   function finishLogged(entry: LoggedWorkout) {
     const totalReps = entry.sets.reduce((total, set) => total + set.completed, 0)
     if (totalReps <= 0) return
-    const completedAt = new Date()
+    const completedAt = completedAtFor(entry.date)
     const session: Session = {
       id: crypto.randomUUID(),
-      date: localDate(completedAt),
+      date: entry.date,
       completedAt: completedAt.toISOString(),
       stageId: entry.stageId,
       stageLabel: entry.stageLabel,

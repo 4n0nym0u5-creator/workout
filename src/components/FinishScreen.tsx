@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { badgeById, type BadgeId } from '../content/badges'
 import type { PlanStage } from '../content/guide'
 import { runConfetti } from '../lib/confetti'
-import { formatClock } from '../lib/dates'
+import { formatClock, formatRelativeDay, localDate } from '../lib/dates'
 import type { Session } from '../lib/types'
 import { Button, Kicker } from './ui'
 
@@ -48,7 +48,7 @@ export function FinishScreen({
   return (
     <div className="relative">
       <canvas ref={canvasRef} className="pointer-events-none fixed inset-0 z-50 h-dvh w-full" aria-hidden="true" />
-      <Kicker>Session logged</Kicker>
+      <Kicker>{session.date === localDate(new Date()) ? 'Session logged' : `Logged · ${formatRelativeDay(session.date)}`}</Kicker>
       <h1 className="mt-2 font-display text-7xl leading-none" data-testid="session-total">
         {session.totalReps}
       </h1>
@@ -56,7 +56,8 @@ export function FinishScreen({
       <p className="mt-4 text-lg leading-snug">{summary.line}</p>
       {bestLine ? <p className="mt-3 font-display text-3xl text-gold">{bestLine}</p> : null}
       <p className="mt-4 text-mute">
-        {session.stageLabel} · {session.optionLabel} · {formatClock(session.durationSec)}
+        {formatRelativeDay(session.date)} · {session.stageLabel} · {session.optionLabel}
+        {session.durationSec > 0 ? ` · ${formatClock(session.durationSec)}` : ''}
       </p>
       <ul className="mt-4 flex flex-wrap gap-2">
         {session.sets.map((set, index) => (

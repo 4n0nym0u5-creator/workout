@@ -2,12 +2,13 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { NudgeCard, StepUpCard } from '../components/Notices'
 import { PhaseReel } from '../components/PhaseReel'
+import { RepChart } from '../components/RepChart'
 import { Button, Kicker, Page } from '../components/ui'
 import { GOAL_REPS, optionFor, stageById, variationById } from '../content/guide'
 import { useStore } from '../context/Store'
 import { useReducedMotion } from '../hooks/useReducedMotion'
 import { localDate } from '../lib/dates'
-import { bestDay, currentStreak, nudgeFor, stageSessions, stepUpReady, weekReps } from '../lib/stats'
+import { bestDay, currentStreak, nudgeFor, stageSessions, stepUpReady, weekReps, weekSeries } from '../lib/stats'
 
 export function Home() {
   const navigate = useNavigate()
@@ -89,6 +90,23 @@ export function Home() {
         <Stat label="This week" value={String(week)} unit="" />
         <Stat label="Best day" value={String(best)} unit="" />
       </div>
+
+      <section className="mt-4 rounded-[1.7rem] border border-line bg-panel p-4">
+        <div className="mb-3 flex items-end justify-between gap-3">
+          <div>
+            <Kicker>This week</Kicker>
+            <h2 className="mt-1 font-display text-4xl leading-none">Keep the bars climbing</h2>
+          </div>
+          <button type="button" className="text-sm font-semibold uppercase tracking-[0.14em] text-ember" onClick={() => navigate('/progress')}>
+            Full log
+          </button>
+        </div>
+        <RepChart
+          series={weekSeries(sessions, now)}
+          goal={GOAL_REPS}
+          emptyHint="Log today's session — or yesterday if you forgot — and this week fills in."
+        />
+      </section>
 
       <button
         type="button"
