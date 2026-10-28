@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import type { JSONValue } from 'postgres'
-import { databaseConfigured, ensureSchema, getSql, isProfileId } from './_lib/db'
+import { databaseConfigured, ensureSchema, getSql, isProfileId } from './_lib/db.js'
 
 type SyncBody = {
   settings?: unknown
