@@ -261,7 +261,7 @@ export function PhaseReel({
           </div>
           <p className="text-sm leading-relaxed text-cream/90">{current.cue}</p>
           <p className="text-xs uppercase tracking-[0.18em] text-mute">
-            {reducedMotion ? 'Stepping only' : 'Each phase holds about 2s · snap back is shorter'}
+            {reducedMotion ? 'Stepping only' : 'Each phase holds about 2s'}
           </p>
         </>
       ) : null}

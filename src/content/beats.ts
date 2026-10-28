@@ -5,7 +5,7 @@ export type Beat = {
   short: string
   cue: string
   alt: string
-  image: 'crouch.jpg' | 'dive.jpg' | 'bottom.jpg'
+  image: 'crouch.jpg' | 'dive.jpg' | 'bottom.jpg' | 'back.jpg'
 }
 
 export const BEATS: Beat[] = [
@@ -40,10 +40,10 @@ export const BEATS: Beat[] = [
     id: 'back',
     name: 'Snap back',
     kicker: '04',
-    short: 'Press up and snap the hips back into the crouch.',
-    cue: 'Press up and snap the hips back into the crouch. Heels stay against the wall the whole rep, then go straight into the next one.',
-    alt: 'Snap back into the crouch: heels against the wall, knees bent low, hips high, arms long, head down.',
-    image: 'crouch.jpg',
+    short: 'Chest low, heels on the wall. Press and snap the hips home.',
+    cue: 'Body long and flat with the chest low and heels still on the wall. Press through the floor and snap the hips back into the crouch, then go straight into the next rep.',
+    alt: 'Snap back: heels against the wall, legs straight, body long and flat, chest low above the floor, ready to press and snap the hips back into the crouch.',
+    image: 'back.jpg',
   },
 ]
 
@@ -52,10 +52,9 @@ export const BEAT_STARTS = [0, 0.25, 0.48, 0.7]
 
 /**
  * Demo playback only. Each photo holds for about two seconds.
- * Snap back is shorter because it returns to the crouch frame.
  * This clock is not the workout rep tempo.
  */
-export const DEMO_HOLD_MS = [2000, 2000, 2000, 1200] as const
+export const DEMO_HOLD_MS = [2000, 2000, 2000, 2000] as const
 export const DEMO_FADE_MS = 480
 export const DEMO_CYCLE_MS = DEMO_HOLD_MS.reduce((total, hold) => total + hold, 0)
 
