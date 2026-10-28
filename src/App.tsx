@@ -1,6 +1,7 @@
 import { HashRouter, Route, Routes } from 'react-router-dom'
 import { Shell } from './components/Shell'
 import { StoreProvider } from './context/Store'
+import { Account } from './pages/Account'
 import { Home } from './pages/Home'
 import { Learn } from './pages/Learn'
 import { Progress } from './pages/Progress'
@@ -19,6 +20,7 @@ export function App() {
             <Route path="learn" element={<Learn />} />
             <Route path="workout" element={<Workout />} />
             <Route path="progress" element={<Progress />} />
+            <Route path="account" element={<Account />} />
           </Route>
         </Routes>
       </HashRouter>

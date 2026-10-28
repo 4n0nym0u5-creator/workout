@@ -1,6 +1,19 @@
 import { describe, expect, it } from 'vitest'
 import { DEMO_CYCLE_MS, DEMO_FADE_MS, DEMO_HOLD_MS, beatIndex, beatWeights, demoFrame, demoOffset } from '../content/beats'
-import { earnedBadges, behindReason, bestDay, currentStreak, isClean, longestStreak, shouldCelebrate, stepUpReady, weekDays } from './stats'
+import { completedAtFor, clampIsoDate, formatRelativeDay, localDate } from './dates'
+import {
+  earnedBadges,
+  behindReason,
+  bestDay,
+  currentStreak,
+  isClean,
+  longestStreak,
+  seriesStats,
+  shouldCelebrate,
+  stepUpReady,
+  weekDays,
+  weeklyTotalsSeries,
+} from './stats'
 import type { Session, SetLog } from './types'
 
 function sets(completed: number[], target = 8): SetLog[] {
@@ -48,6 +61,37 @@ describe('streaks and days', () => {
     const sessions = [session({ date: '2026-10-27', sets: sets([20]) }), session({ date: '2026-10-27', id: 'b', sets: sets([15]) }), session({ date: '2026-10-26', sets: sets([8]) })]
     expect(bestDay(sessions)).toEqual({ reps: 35, date: '2026-10-27' })
     expect(weekDays(sessions, now)).toBe(2)
+  })
+})
+
+describe('historical dates and weekly charts', () => {
+  const now = new Date(2026, 9, 28, 18)
+
+  it('keeps today as now and parks past days at local noon', () => {
+    const today = localDate(now)
+    const yesterday = '2026-10-27'
+    expect(completedAtFor(today, now).getTime()).toBe(now.getTime())
+    const past = completedAtFor(yesterday, now)
+    expect(localDate(past)).toBe(yesterday)
+    expect(past.getHours()).toBe(12)
+    expect(clampIsoDate('2099-01-01', '2024-01-01', today)).toBe(today)
+    expect(formatRelativeDay(today, now)).toBe('Today')
+    expect(formatRelativeDay(yesterday, now)).toBe('Yesterday')
+  })
+
+  it('builds weekly totals oldest-first and averages only trained days', () => {
+    const sessions = [
+      session({ date: '2026-10-27', sets: sets([20]) }),
+      session({ date: '2026-10-20', sets: sets([10]) }),
+      session({ date: '2026-10-21', sets: sets([15]) }),
+    ]
+    const series = weeklyTotalsSeries(sessions, now, 3)
+    expect(series).toHaveLength(3)
+    expect(series[2].label).toBe('Now')
+    expect(series[2].reps).toBe(20)
+    expect(series[1].reps).toBe(25)
+    expect(series[0].reps).toBe(0)
+    expect(seriesStats(series)).toEqual({ total: 45, best: 25, average: 23, trainedDays: 2 })
   })
 })
 
@@ -113,13 +157,14 @@ describe('badges and celebrations', () => {
 })
 
 describe('phase timing', () => {
-  it('walks crouch, dive, bottom, then snap back across one rep', () => {
+  it('walks crouch, dive, bottom, press, then snap back across one rep', () => {
     expect(beatIndex(0)).toBe(0)
-    expect(beatIndex(0.24)).toBe(0)
-    expect(beatIndex(0.25)).toBe(1)
-    expect(beatIndex(0.48)).toBe(2)
-    expect(beatIndex(0.7)).toBe(3)
-    expect(beatIndex(0.99)).toBe(3)
+    expect(beatIndex(0.19)).toBe(0)
+    expect(beatIndex(0.21)).toBe(1)
+    expect(beatIndex(0.41)).toBe(2)
+    expect(beatIndex(0.61)).toBe(3)
+    expect(beatIndex(0.81)).toBe(4)
+    expect(beatIndex(0.99)).toBe(4)
   })
 
   it('keeps a photo visible at every point in the loop', () => {
@@ -127,21 +172,22 @@ describe('phase timing', () => {
       const weights = beatWeights(step / 20)
       const sum = weights.reduce((total, weight) => total + weight, 0)
       expect(sum).toBeGreaterThan(0.99)
+      expect(weights).toHaveLength(5)
       expect(weights.some((weight) => weight > 0.4)).toBe(true)
     }
   })
 
   it('holds each demo phase for about two seconds and crossfades instead of cutting', () => {
+    expect(DEMO_HOLD_MS).toHaveLength(5)
     expect(DEMO_HOLD_MS[0]).toBeGreaterThanOrEqual(2000)
-    expect(DEMO_HOLD_MS[1]).toBeGreaterThanOrEqual(2000)
-    expect(DEMO_HOLD_MS[2]).toBeGreaterThanOrEqual(2000)
-    expect(DEMO_HOLD_MS[3]).toBeLessThan(DEMO_HOLD_MS[0])
-    expect(DEMO_CYCLE_MS).toBeGreaterThan(6000)
+    expect(DEMO_HOLD_MS[4]).toBeGreaterThanOrEqual(2000)
+    expect(DEMO_CYCLE_MS).toBeGreaterThanOrEqual(10_000)
 
-    expect(demoFrame(1000)).toEqual({ index: 0, weights: [1, 0, 0, 0] })
+    expect(demoFrame(1000)).toEqual({ index: 0, weights: [1, 0, 0, 0, 0] })
     expect(demoFrame(demoOffset(1) + 400).index).toBe(1)
     expect(demoFrame(demoOffset(2) + 400).index).toBe(2)
-    expect(demoFrame(demoOffset(3) + 200).index).toBe(3)
+    expect(demoFrame(demoOffset(3) + 400).index).toBe(3)
+    expect(demoFrame(demoOffset(4) + 400).index).toBe(4)
 
     const midFade = demoFrame(DEMO_HOLD_MS[0] - DEMO_FADE_MS / 2)
     expect(midFade.weights[0]).toBeGreaterThan(0.2)

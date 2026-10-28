@@ -66,10 +66,23 @@ export function Shell() {
               </NavLink>
             ))}
           </nav>
-          <p className="mt-auto text-sm text-mute">
-            <span className="font-display text-4xl text-cream">{streak}</span>
-            <span className="mt-1 block uppercase tracking-[0.18em]">day streak</span>
-          </p>
+          <div className="mt-auto grid gap-3">
+            <NavLink
+              to="/"
+              end
+              onClick={(event) => {
+                guardClick(event, dirty, () => setPending('/'))
+                window.setTimeout(() => document.getElementById('login')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
+              }}
+              className="rounded-2xl px-3 py-2 text-sm font-semibold uppercase tracking-[0.16em] text-mute hover:text-cream"
+            >
+              Account
+            </NavLink>
+            <p className="text-sm text-mute">
+              <span className="font-display text-4xl text-cream">{streak}</span>
+              <span className="mt-1 block uppercase tracking-[0.18em]">day streak</span>
+            </p>
+          </div>
         </aside>
         <main id="main" className="min-w-0">
           <Outlet />

@@ -28,7 +28,7 @@ export function Learn() {
   return (
     <Page title="Learn" wide>
       <Kicker>The rep</Kicker>
-      <h1 className="mt-2 font-display text-6xl leading-[0.85] md:text-7xl">Crouch. Dive. Bottom. Snap back.</h1>
+      <h1 className="mt-2 font-display text-6xl leading-[0.85] md:text-7xl">Crouch. Dive. Bottom. Press. Snap back.</h1>
       <p className="mt-3 max-w-xl text-mute">
         A continuous squat-to-push-up. Hands stay planted and heels stay against the wall the whole rep. The demo holds each phase so you can see it. Workout tempo is separate, about 1.5–2 seconds a rep once it is clean.
       </p>

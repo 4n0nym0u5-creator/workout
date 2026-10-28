@@ -27,6 +27,7 @@ import {
   weekDays,
   weekReps,
   weekSeries,
+  weeklyTotalsSeries,
 } from '../lib/stats'
 import type { PlanStageId, Session } from '../lib/types'
 
@@ -34,13 +35,27 @@ type Range = 'week' | '8w' | 'all'
 
 export function Progress() {
   const navigate = useNavigate()
-  const { sessions, settings, updateSettings, saveSession, deleteSession, replaceAll, mergeSessions, storageWarning } = useStore()
+  const {
+    sessions,
+    settings,
+    updateSettings,
+    saveSession,
+    deleteSession,
+    replaceAll,
+    mergeSessions,
+    storageWarning,
+    user,
+    syncStatus,
+    syncNow,
+    logout,
+  } = useStore()
   const [range, setRange] = useState<Range>('8w')
   const [editing, setEditing] = useState<Session | null>(null)
   const [backup, setBackup] = useState<Backup | null>(null)
   const [importError, setImportError] = useState<string | null>(null)
   const [confirmReplace, setConfirmReplace] = useState(false)
   const [confirmErase, setConfirmErase] = useState(false)
+  const [syncBusy, setSyncBusy] = useState(false)
   const now = new Date()
   const stage = stageById(settings.stageId)
   const badges = earnedBadges(sessions)
@@ -53,7 +68,16 @@ export function Progress() {
   const showStep = ready !== null && settings.stepUpSnooze[settings.stageId] !== stageCount
   const dates = uniqueDates(sessions)
   const allDays = dates.length === 0 ? 14 : Math.min(120, Math.max(14, daysBetween(dates[0], localDate(now)) + 1))
-  const series = range === 'week' ? weekSeries(sessions, now) : dailySeries(sessions, now, range === '8w' ? 56 : allDays)
+  const allWeeks = dates.length === 0 ? 8 : Math.min(26, Math.max(8, Math.ceil(allDays / 7)))
+  const series =
+    range === 'week'
+      ? weekSeries(sessions, now)
+      : range === '8w'
+        ? weeklyTotalsSeries(sessions, now, 8)
+        : allDays <= 21
+          ? dailySeries(sessions, now, allDays)
+          : weeklyTotalsSeries(sessions, now, allWeeks)
+  const chartGoal = range === 'week' ? GOAL_REPS : undefined
   const todayKey = localDate(now)
   const groups = useMemo(() => groupSessions(sessions, todayKey), [sessions, todayKey])
 
@@ -141,11 +165,36 @@ export function Progress() {
           />
         ) : null}
         {storageWarning ? <p className="rounded-2xl border border-gold/40 bg-gold/10 px-4 py-3 text-sm">{storageWarning}</p> : null}
+        <AccountCard
+          user={user}
+          status={syncStatus}
+          busy={syncBusy}
+          onLogin={() => {
+            navigate('/')
+            window.setTimeout(() => document.getElementById('login')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
+          }}
+          onSync={async () => {
+            setSyncBusy(true)
+            try {
+              await syncNow()
+            } finally {
+              setSyncBusy(false)
+            }
+          }}
+          onLogout={() => {
+            void logout()
+          }}
+        />
       </div>
 
       <section className="mt-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="font-display text-4xl leading-none">Reps over time</h2>
+          <div>
+            <h2 className="font-display text-4xl leading-none">Reps over time</h2>
+            <p className="mt-1 text-sm text-mute">
+              {range === 'week' ? 'Daily reps this week' : range === '8w' ? 'Weekly totals for eight weeks' : 'Your full climb'}
+            </p>
+          </div>
           <div className="flex gap-1">
             <Pill pressed={range === 'week'} onClick={() => setRange('week')}>
               Week
@@ -159,8 +208,11 @@ export function Progress() {
           </div>
         </div>
         <div className="mt-3 rounded-3xl border border-line bg-panel p-4">
-          {sessions.length === 0 ? <p className="mb-3 text-sm text-mute">Finish a workout and the days start to stack.</p> : null}
-          <RepChart series={series} />
+          <RepChart
+            series={series}
+            goal={chartGoal}
+            emptyHint="Log a workout — including past days — and the chart fills in."
+          />
         </div>
       </section>
 
@@ -180,9 +232,14 @@ export function Progress() {
       </section>
 
       <section className="mt-8">
-        <h2 className="font-display text-4xl leading-none">Sessions</h2>
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <h2 className="font-display text-4xl leading-none">Sessions</h2>
+          <button type="button" className="text-sm font-semibold uppercase tracking-[0.14em] text-ember" onClick={() => navigate('/workout')}>
+            Add past day
+          </button>
+        </div>
         {sessions.length === 0 ? (
-          <p className="mt-3 text-mute">No sessions yet. The floor is undefeated until you show up.</p>
+          <p className="mt-3 text-mute">No sessions yet. Log today or tap Add past day if you trained off-app.</p>
         ) : (
           <div className="mt-3 grid gap-5">
             {groups.map((group) => (
@@ -219,7 +276,9 @@ export function Progress() {
 
       <section className="mt-8 rounded-3xl border border-line p-4">
         <h2 className="font-display text-4xl leading-none">Backup</h2>
-        <p className="mt-2 text-sm text-mute">The log lives in this browser. Export JSON before you clear it, and import it on another device.</p>
+        <p className="mt-2 text-sm text-mute">
+          Log in to keep workouts on your account across devices. This browser also keeps a local cache (`tyson-pushup-v1`). Export JSON anytime as a spare copy.
+        </p>
         <div className="mt-4 flex flex-wrap gap-2">
           <Button className="h-12 w-auto px-5 text-2xl" data-testid="export-log" onClick={exportLog}>
             Export
@@ -317,6 +376,61 @@ function Mini({ label, value }: { label: string; value: string }) {
       <p className="text-[0.62rem] font-semibold uppercase tracking-[0.16em] text-mute">{label}</p>
       <p className="font-display text-4xl leading-none">{value}</p>
     </div>
+  )
+}
+
+function AccountCard({
+  user,
+  status,
+  busy,
+  onLogin,
+  onSync,
+  onLogout,
+}: {
+  user: ReturnType<typeof useStore>['user']
+  status: ReturnType<typeof useStore>['syncStatus']
+  busy: boolean
+  onLogin: () => void
+  onSync: () => Promise<void>
+  onLogout: () => void
+}) {
+  if (!user) {
+    return (
+      <aside className="rounded-3xl border border-line bg-panel p-4">
+        <p className="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-ember">Account</p>
+        <p className="mt-2 text-sm leading-relaxed text-cream/90">
+          Progress stays in this browser until you log in. Create an account to keep the same log on another device.
+        </p>
+        <Button className="mt-3 h-11 w-auto px-4 text-2xl" onClick={onLogin}>
+          Log in
+        </Button>
+      </aside>
+    )
+  }
+
+  const line =
+    status.state === 'synced'
+      ? `Saved to account · ${new Date(status.at).toLocaleString()}`
+      : status.state === 'syncing'
+        ? 'Saving to your account…'
+        : status.state === 'local' || status.state === 'error'
+          ? status.message
+          : 'Logged in'
+
+  return (
+    <aside className="rounded-3xl border border-line bg-panel p-4">
+      <p className="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-ember">Account</p>
+      <p className="mt-2 font-display text-3xl leading-none">{user.email}</p>
+      <p className="mt-2 text-sm leading-relaxed text-cream/90">{line}</p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <Button className="h-11 w-auto px-4 text-2xl" disabled={busy} onClick={() => void onSync()}>
+          Save now
+        </Button>
+        <Button tone="ghost" className="h-11 w-auto px-4 text-2xl" onClick={onLogout}>
+          Log out
+        </Button>
+      </div>
+    </aside>
   )
 }
 

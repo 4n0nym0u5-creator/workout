@@ -228,7 +228,7 @@ export function PhaseReel({
         </div>
 
         {driven ? (
-          <div className="grid grid-cols-4 gap-1 px-3 py-2">
+          <div className="grid grid-cols-5 gap-1 px-3 py-2">
             {BEATS.map((item, index) => (
               <div key={item.id} className="h-1 overflow-hidden rounded-full bg-white/15">
                 <div className="h-full bg-blood" style={{ width: `${beatFill(liveProgress, index) * 100}%` }} />
@@ -245,7 +245,7 @@ export function PhaseReel({
 
       {!driven && showChrome ? (
         <>
-          <div className="grid grid-cols-4 gap-1" role="group" aria-label="Phases">
+          <div className="grid grid-cols-5 gap-1" role="group" aria-label="Phases">
             {BEATS.map((item, index) => (
               <button
                 key={item.id}
@@ -253,7 +253,7 @@ export function PhaseReel({
                 data-testid={`phase-${item.id}`}
                 aria-pressed={index === active}
                 onClick={() => jump(index)}
-                className={`min-h-11 rounded-xl px-1 py-2 text-center text-[11px] font-semibold uppercase leading-tight tracking-[0.08em] ${index === active ? 'bg-blood text-white' : 'bg-white/5 text-mute'}`}
+                className={`min-h-11 rounded-xl px-0.5 py-2 text-center text-[10px] font-semibold uppercase leading-tight tracking-[0.06em] ${index === active ? 'bg-blood text-white' : 'bg-white/5 text-mute'}`}
               >
                 {item.name}
               </button>
@@ -261,7 +261,7 @@ export function PhaseReel({
           </div>
           <p className="text-sm leading-relaxed text-cream/90">{current.cue}</p>
           <p className="text-xs uppercase tracking-[0.18em] text-mute">
-            {reducedMotion ? 'Stepping only' : 'Each phase holds about 2s · snap back is shorter'}
+            {reducedMotion ? 'Stepping only' : 'Each phase holds about 2s'}
           </p>
         </>
       ) : null}
