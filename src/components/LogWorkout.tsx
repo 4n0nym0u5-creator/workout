@@ -296,7 +296,7 @@ export function LogWorkout({ onSave, onCountLive }: { onSave: (entry: LoggedWork
       </div>
 
       <button type="button" className="mt-5 w-full text-sm font-semibold uppercase tracking-[0.16em] text-mute" onClick={onCountLive}>
-        Count each rep instead
+        Start a live session instead
       </button>
       <div className="h-20 md:hidden" aria-hidden="true" />
       <div className="fixed inset-x-0 bottom-[4.6rem] z-30 px-4 md:static md:bottom-auto md:mt-5 md:px-0">

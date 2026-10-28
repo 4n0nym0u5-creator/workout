@@ -57,7 +57,7 @@ export function Home() {
           {variation.id === 'standard' ? '' : ` · ${variation.name}`}
         </p>
         <Button className="mt-5 w-full" onClick={() => navigate('/workout')}>
-          Log workout
+          Start workout
         </Button>
       </section>
 
