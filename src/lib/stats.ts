@@ -132,6 +132,36 @@ export function weekSeries(sessions: Session[], now: Date) {
   })
 }
 
+/** One bar per week, oldest first. Label is the week-start month/day. */
+export function weeklyTotalsSeries(sessions: Session[], now: Date, weeks: number) {
+  const totals = dayTotals(sessions)
+  const thisWeek = startOfWeek(now)
+  const count = Math.max(1, Math.floor(weeks))
+  const series: { date: string; reps: number; label: string }[] = []
+  for (let index = count - 1; index >= 0; index -= 1) {
+    const start = addDays(thisWeek, -index * 7)
+    let reps = 0
+    for (let day = 0; day < 7; day += 1) {
+      reps += totals.get(localDate(addDays(start, day))) ?? 0
+    }
+    const date = localDate(start)
+    const label =
+      index === 0
+        ? 'Now'
+        : start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+    series.push({ date, reps, label })
+  }
+  return series
+}
+
+export function seriesStats(series: { reps: number }[]) {
+  const trained = series.filter((point) => point.reps > 0)
+  const total = series.reduce((sum, point) => sum + point.reps, 0)
+  const best = series.reduce((max, point) => Math.max(max, point.reps), 0)
+  const average = trained.length === 0 ? 0 : Math.round(total / trained.length)
+  return { total, best, average, trainedDays: trained.length }
+}
+
 export function behindReason(done: number, target: number, dow: number): NudgeKind | null {
   if (done >= target) return null
   const remainingIncludingToday = 8 - dow
