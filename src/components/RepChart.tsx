@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { formatDay } from '../lib/dates'
+import { formatDay, localDate } from '../lib/dates'
 import { seriesStats } from '../lib/stats'
 
 type Point = { date: string; reps: number; label?: string }
@@ -19,9 +19,29 @@ function niceMax(value: number) {
   return nice * power
 }
 
+function defaultIndex(series: Point[]) {
+  if (series.length === 0) return 0
+  const todayKey = localDate(new Date())
+  const todayIndex = series.findIndex((point) => point.date === todayKey)
+  if (todayIndex >= 0) return todayIndex
+  for (let index = series.length - 1; index >= 0; index -= 1) {
+    if (series[index].reps > 0) return index
+  }
+  return Math.max(0, series.length - 1)
+}
+
+function pointCaption(point: Point) {
+  if (!point.label) return formatDay(point.date)
+  // Weekday letters (M/T/W…) — prefer the full day label.
+  if (point.label.length <= 2) return formatDay(point.date)
+  if (point.label === 'Now') return `This week · ${formatDay(point.date)}`
+  return point.label
+}
+
 export function RepChart({ series, goal, emptyHint = 'Finish a workout and the days start to stack.', unit = 'reps' }: Props) {
   const [picked, setPicked] = useState<number | null>(null)
-  const active = picked !== null && picked >= 0 && picked < series.length ? picked : series.length - 1
+  const fallback = defaultIndex(series)
+  const active = picked !== null && picked >= 0 && picked < series.length ? picked : fallback
   const selected = series[active]
   const stats = seriesStats(series)
   const ceiling = Math.max(1, stats.best, goal && stats.best > 0 ? Math.min(goal, stats.best * 1.35) : 0)
@@ -35,9 +55,7 @@ export function RepChart({ series, goal, emptyHint = 'Finish a workout and the d
       <div className="mb-3 flex items-end justify-between gap-3">
         <div>
           <p className="font-display text-4xl leading-none">{selected?.reps ?? 0}</p>
-          <p className="text-sm text-mute">
-            {selected ? (selected.label ? `${selected.label} · ${formatDay(selected.date)}` : formatDay(selected.date)) : 'No days yet'}
-          </p>
+          <p className="text-sm text-mute">{selected ? pointCaption(selected) : 'No days yet'}</p>
         </div>
         <p className="text-xs uppercase tracking-[0.16em] text-mute">Peak {max}</p>
       </div>
