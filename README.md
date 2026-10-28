@@ -22,7 +22,22 @@ npm run preview   # serve the production build
 - **Learn** — crouch, dive, bottom, and the snap back, with form cues, mistakes, muscles, the 9-week plan, easier and harder versions, and safety notes.
 - **Demo** — the three trainer photos loop as one rep, timed to the 1.5s / 1.75s / 2s / 3s tempo, with the phase name and cue on each beat. Switch to **Steps** to tap through and read the full cue. Swipe, the side arrows, or the left and right arrow keys.
 - **Train** — today’s plan stage or a custom target. Tap to count, or a tempo pacer that counts, ticks, and (optionally) vibrates once per rep. Rest timer between sets, then a finish screen. You can also log a past day (yesterday or older) if a workout was not captured live.
-- **Log** — sessions stay in this browser only (`localStorage` key `tyson-pushup-v1`). There is no server database. Streaks, weekly totals, bests, progress toward 250, badges, home/progress charts, edit, delete, and JSON export/import.
+- **Log** — sessions sync to **Neon Postgres** via `/api/sync` when `DATABASE_URL` is set on the Vercel project. The browser also keeps a local cache (`tyson-pushup-v1`) for offline use. Streaks, weekly totals, bests, progress toward 250, badges, home/progress charts, edit, delete, profile restore, and JSON export/import.
+
+## Database
+
+1. In the Vercel dashboard, open the **tyson-pushup** project → **Storage** / **Integrations**.
+2. Connect the existing Neon installation (or create a new Neon database) to **tyson-pushup** for Production + Preview.
+3. Redeploy. `/api/health` should report `{ ok: true, database: true }`.
+4. Open **Log** in the app to confirm cloud sync, and copy your profile id if you want the same log on another device.
+
+Local API testing:
+
+```bash
+npx vercel link --yes --scope 4n0nym0u5-creators-projects --project tyson-pushup
+npx vercel env pull .env.local --yes
+npx vercel dev
+```
 - **PWA** — installable, and the production build caches the app shell and photos for offline use.
 
 ## Optional film

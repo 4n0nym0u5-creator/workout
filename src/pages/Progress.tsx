@@ -35,13 +35,29 @@ type Range = 'week' | '8w' | 'all'
 
 export function Progress() {
   const navigate = useNavigate()
-  const { sessions, settings, updateSettings, saveSession, deleteSession, replaceAll, mergeSessions, storageWarning } = useStore()
+  const {
+    sessions,
+    settings,
+    updateSettings,
+    saveSession,
+    deleteSession,
+    replaceAll,
+    mergeSessions,
+    storageWarning,
+    cloudStatus,
+    profileId,
+    syncNow,
+    adoptProfile,
+  } = useStore()
   const [range, setRange] = useState<Range>('8w')
   const [editing, setEditing] = useState<Session | null>(null)
   const [backup, setBackup] = useState<Backup | null>(null)
   const [importError, setImportError] = useState<string | null>(null)
   const [confirmReplace, setConfirmReplace] = useState(false)
   const [confirmErase, setConfirmErase] = useState(false)
+  const [profileDraft, setProfileDraft] = useState(profileId)
+  const [profileError, setProfileError] = useState<string | null>(null)
+  const [syncBusy, setSyncBusy] = useState(false)
   const now = new Date()
   const stage = stageById(settings.stageId)
   const badges = earnedBadges(sessions)
@@ -151,6 +167,35 @@ export function Progress() {
           />
         ) : null}
         {storageWarning ? <p className="rounded-2xl border border-gold/40 bg-gold/10 px-4 py-3 text-sm">{storageWarning}</p> : null}
+        <CloudCard
+          status={cloudStatus}
+          profileId={profileId}
+          profileDraft={profileDraft}
+          profileError={profileError}
+          busy={syncBusy}
+          onDraftChange={setProfileDraft}
+          onSync={async () => {
+            setSyncBusy(true)
+            setProfileError(null)
+            try {
+              await syncNow()
+            } finally {
+              setSyncBusy(false)
+            }
+          }}
+          onAdopt={async () => {
+            setSyncBusy(true)
+            setProfileError(null)
+            try {
+              await adoptProfile(profileDraft.trim())
+              setProfileDraft(profileDraft.trim())
+            } catch (error) {
+              setProfileError(error instanceof Error ? error.message : 'Could not switch profile.')
+            } finally {
+              setSyncBusy(false)
+            }
+          }}
+        />
       </div>
 
       <section className="mt-8">
@@ -243,7 +288,7 @@ export function Progress() {
       <section className="mt-8 rounded-3xl border border-line p-4">
         <h2 className="font-display text-4xl leading-none">Backup</h2>
         <p className="mt-2 text-sm text-mute">
-          There is no server database. Progress is saved only in this browser&apos;s local storage (`tyson-pushup-v1`). Export JSON before you clear it, and import it on another device.
+          Workouts sync to Neon Postgres when the cloud database is connected. This browser also keeps a local cache (`tyson-pushup-v1`). Export JSON anytime as a spare copy.
         </p>
         <div className="mt-4 flex flex-wrap gap-2">
           <Button className="h-12 w-auto px-5 text-2xl" data-testid="export-log" onClick={exportLog}>
@@ -342,6 +387,77 @@ function Mini({ label, value }: { label: string; value: string }) {
       <p className="text-[0.62rem] font-semibold uppercase tracking-[0.16em] text-mute">{label}</p>
       <p className="font-display text-4xl leading-none">{value}</p>
     </div>
+  )
+}
+
+function CloudCard({
+  status,
+  profileId,
+  profileDraft,
+  profileError,
+  busy,
+  onDraftChange,
+  onSync,
+  onAdopt,
+}: {
+  status: ReturnType<typeof useStore>['cloudStatus']
+  profileId: string
+  profileDraft: string
+  profileError: string | null
+  busy: boolean
+  onDraftChange: (value: string) => void
+  onSync: () => Promise<void>
+  onAdopt: () => Promise<void>
+}) {
+  const line =
+    status.state === 'synced'
+      ? `Synced to Neon · ${new Date(status.at).toLocaleString()}`
+      : status.state === 'syncing'
+        ? 'Syncing with Neon…'
+        : status.state === 'local'
+          ? status.message
+          : status.state === 'error'
+            ? status.message
+            : 'Checking cloud database…'
+
+  return (
+    <aside className="rounded-3xl border border-line bg-panel p-4">
+      <p className="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-ember">Cloud database</p>
+      <p className="mt-2 text-sm leading-relaxed text-cream/90">{line}</p>
+      <p className="mt-3 text-xs leading-relaxed text-mute">
+        Profile id identifies your log in Postgres. Keep a copy to restore on another phone or browser.
+      </p>
+      <label className="mt-3 block text-sm text-mute">
+        Profile id
+        <input
+          value={profileDraft}
+          onChange={(event) => onDraftChange(event.target.value)}
+          spellCheck={false}
+          className="mt-1 h-11 w-full rounded-xl border border-line bg-ink px-3 font-mono text-xs text-cream"
+        />
+      </label>
+      {profileError ? <p className="mt-2 text-sm text-ember">{profileError}</p> : null}
+      <div className="mt-3 flex flex-wrap gap-2">
+        <Button className="h-11 w-auto px-4 text-2xl" disabled={busy} onClick={() => void onSync()}>
+          Sync now
+        </Button>
+        <Button
+          tone="ghost"
+          className="h-11 w-auto px-4 text-2xl"
+          disabled={busy || profileDraft.trim() === profileId}
+          onClick={() => void onAdopt()}
+        >
+          Load profile
+        </Button>
+        <button
+          type="button"
+          className="h-11 rounded-2xl px-4 text-sm font-semibold uppercase tracking-[0.14em] text-mute"
+          onClick={() => void navigator.clipboard?.writeText(profileId)}
+        >
+          Copy id
+        </button>
+      </div>
+    </aside>
   )
 }
 
