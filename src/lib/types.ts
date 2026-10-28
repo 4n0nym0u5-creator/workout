@@ -11,7 +11,7 @@ export type VariationId =
   | 'feet-up'
   | 'combo'
 
-export type CountMode = 'log' | 'total' | 'tap' | 'tempo'
+export type CountMode = 'log' | 'total' | 'sets' | 'tap' | 'tempo'
 
 export type Difficulty = 'easy' | 'solid' | 'hard'
 

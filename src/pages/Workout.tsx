@@ -5,12 +5,13 @@ import { FinishScreen, type FinishSummary } from '../components/FinishScreen'
 import { FocusFrame, useLeaveGuard } from '../components/Shell'
 import { useTitle } from '../components/ui'
 import { LogWorkout, type LoggedWorkout } from '../components/LogWorkout'
+import { SetRound } from '../components/SetRound'
 import { WorkoutSetup } from '../components/WorkoutSetup'
 import { nextStage } from '../content/guide'
 import { lineForFinish } from '../content/lines'
 import { useStore } from '../context/Store'
 import { beep, vibrate } from '../lib/audio'
-import { formatClock, localDate } from '../lib/dates'
+import { completedAtFor, formatClock, localDate } from '../lib/dates'
 import { dayTotals, freshBadges, shouldCelebrate, stageSessions, stepUpReady } from '../lib/stats'
 import type { Session, SetLog, WorkoutPlan } from '../lib/types'
 import { Button } from '../components/ui'
@@ -21,7 +22,7 @@ export function Workout() {
   const navigate = useNavigate()
   const { sessions, settings, saveSession, updateSettings } = useStore()
   const { setDirty } = useLeaveGuard()
-  const [phase, setPhase] = useState<Phase>('log')
+  const [phase, setPhase] = useState<Phase>('setup')
   const [plan, setPlan] = useState<WorkoutPlan | null>(null)
   const [setIndex, setSetIndex] = useState(0)
   const [log, setLog] = useState<SetLog[]>([])
@@ -32,7 +33,8 @@ export function Workout() {
   const startedAt = useRef<number | null>(null)
   const logRef = useRef<SetLog[]>([])
   const chimed = useRef(false)
-  useTitle(phase === 'setup' ? 'Train' : 'In session')
+  const autoStarted = useRef(false)
+  useTitle(phase === 'setup' || phase === 'log' ? 'Train' : 'In session')
 
   useEffect(() => {
     setDirty(phase === 'work' || phase === 'rest')
@@ -50,6 +52,7 @@ export function Workout() {
   useEffect(() => {
     if (phase !== 'rest') {
       chimed.current = false
+      autoStarted.current = false
       return
     }
     if (restLeft === 0 && !chimed.current) {
@@ -57,10 +60,14 @@ export function Workout() {
       if (plan?.sound) beep('rest')
       if (plan?.haptics) vibrate([20, 40, 20])
     }
+    if (restLeft === 0 && !autoStarted.current) {
+      autoStarted.current = true
+      setPhase('work')
+    }
   }, [phase, plan?.haptics, plan?.sound, restLeft])
 
   useEffect(() => {
-    if (phase === 'setup' || phase === 'done') return
+    if (phase === 'setup' || phase === 'log' || phase === 'done') return
     const onLeave = (event: BeforeUnloadEvent) => {
       event.preventDefault()
       event.returnValue = ''
@@ -146,10 +153,10 @@ export function Workout() {
   function finishLogged(entry: LoggedWorkout) {
     const totalReps = entry.sets.reduce((total, set) => total + set.completed, 0)
     if (totalReps <= 0) return
-    const completedAt = new Date()
+    const completedAt = completedAtFor(entry.date)
     const session: Session = {
       id: crypto.randomUUID(),
-      date: localDate(completedAt),
+      date: entry.date,
       completedAt: completedAt.toISOString(),
       stageId: entry.stageId,
       stageLabel: entry.stageLabel,
@@ -197,12 +204,31 @@ export function Workout() {
   }
 
   if (phase === 'setup' || ((phase === 'work' || phase === 'rest') && !plan)) {
-    return <WorkoutSetup onStart={begin} onBack={() => setPhase('log')} />
+    return <WorkoutSetup onStart={begin} onLogPast={() => setPhase('log')} />
   }
+
+  if (!plan) {
+    return <WorkoutSetup onStart={begin} onLogPast={() => setPhase('log')} />
+  }
+
+  const useSetRound = plan.countMode === 'sets' || plan.countMode === 'log' || plan.countMode === 'total'
 
   return (
     <FocusFrame>
-      {phase === 'work' && plan ? (
+      {phase === 'work' && useSetRound ? (
+        <SetRound
+          key={setIndex}
+          setNumber={setIndex + 1}
+          setCount={plan.sets}
+          target={plan.reps}
+          variation={plan.variation}
+          onBegin={markStart}
+          onComplete={commitSet}
+          onQuit={askQuit}
+        />
+      ) : null}
+
+      {phase === 'work' && !useSetRound ? (
         <ActiveSet
           key={setIndex}
           setNumber={setIndex + 1}
@@ -219,17 +245,19 @@ export function Workout() {
         />
       ) : null}
 
-      {phase === 'rest' && plan ? (
+      {phase === 'rest' ? (
         <div className="flex min-h-[70dvh] flex-col">
           <button type="button" onClick={askQuit} className="self-start text-sm font-semibold uppercase tracking-[0.16em] text-mute">
             Close
           </button>
           <p className="mt-10 text-[0.68rem] font-semibold uppercase tracking-[0.28em] text-blood">Rest</p>
-          <p className="mt-2 font-display text-[7rem] leading-none tabular-nums">{formatClock(restLeft)}</p>
+          <p className="mt-2 font-display text-[7rem] leading-none tabular-nums" data-testid="rest-timer">
+            {formatClock(restLeft)}
+          </p>
           <p className="mt-3 text-lg text-mute">
             Next: set {setIndex + 1} of {plan.sets} · {plan.reps} reps
           </p>
-          <p className="mt-6 max-w-sm text-lg">Breathe. Shake the hands out. The next set starts clean.</p>
+          <p className="mt-6 max-w-sm text-lg">Breathe. Shake the hands out. The next set starts when the clock hits zero.</p>
           <div className="mt-auto grid gap-2 pt-8">
             {restLeft === 0 ? (
               <Button onClick={() => setPhase('work')}>Start set</Button>
@@ -240,6 +268,7 @@ export function Workout() {
               tone="ghost"
               onClick={() => {
                 setRestEndsAt((current) => (current ?? Date.now()) + 15_000)
+                autoStarted.current = false
               }}
             >
               +15 seconds
@@ -254,7 +283,7 @@ export function Workout() {
           onDone={() => navigate('/')}
           onAgain={() => {
             setPlan(null)
-            setPhase('log')
+            setPhase('setup')
           }}
           onMoveUp={() => {
             const upcoming = nextStage(settings.stageId)

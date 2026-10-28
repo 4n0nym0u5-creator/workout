@@ -1,6 +1,19 @@
 import { describe, expect, it } from 'vitest'
 import { DEMO_CYCLE_MS, DEMO_FADE_MS, DEMO_HOLD_MS, beatIndex, beatWeights, demoFrame, demoOffset } from '../content/beats'
-import { earnedBadges, behindReason, bestDay, currentStreak, isClean, longestStreak, shouldCelebrate, stepUpReady, weekDays } from './stats'
+import { completedAtFor, clampIsoDate, formatRelativeDay, localDate } from './dates'
+import {
+  earnedBadges,
+  behindReason,
+  bestDay,
+  currentStreak,
+  isClean,
+  longestStreak,
+  seriesStats,
+  shouldCelebrate,
+  stepUpReady,
+  weekDays,
+  weeklyTotalsSeries,
+} from './stats'
 import type { Session, SetLog } from './types'
 
 function sets(completed: number[], target = 8): SetLog[] {
@@ -48,6 +61,37 @@ describe('streaks and days', () => {
     const sessions = [session({ date: '2026-10-27', sets: sets([20]) }), session({ date: '2026-10-27', id: 'b', sets: sets([15]) }), session({ date: '2026-10-26', sets: sets([8]) })]
     expect(bestDay(sessions)).toEqual({ reps: 35, date: '2026-10-27' })
     expect(weekDays(sessions, now)).toBe(2)
+  })
+})
+
+describe('historical dates and weekly charts', () => {
+  const now = new Date(2026, 9, 28, 18)
+
+  it('keeps today as now and parks past days at local noon', () => {
+    const today = localDate(now)
+    const yesterday = '2026-10-27'
+    expect(completedAtFor(today, now).getTime()).toBe(now.getTime())
+    const past = completedAtFor(yesterday, now)
+    expect(localDate(past)).toBe(yesterday)
+    expect(past.getHours()).toBe(12)
+    expect(clampIsoDate('2099-01-01', '2024-01-01', today)).toBe(today)
+    expect(formatRelativeDay(today, now)).toBe('Today')
+    expect(formatRelativeDay(yesterday, now)).toBe('Yesterday')
+  })
+
+  it('builds weekly totals oldest-first and averages only trained days', () => {
+    const sessions = [
+      session({ date: '2026-10-27', sets: sets([20]) }),
+      session({ date: '2026-10-20', sets: sets([10]) }),
+      session({ date: '2026-10-21', sets: sets([15]) }),
+    ]
+    const series = weeklyTotalsSeries(sessions, now, 3)
+    expect(series).toHaveLength(3)
+    expect(series[2].label).toBe('Now')
+    expect(series[2].reps).toBe(20)
+    expect(series[1].reps).toBe(25)
+    expect(series[0].reps).toBe(0)
+    expect(seriesStats(series)).toEqual({ total: 45, best: 25, average: 23, trainedDays: 2 })
   })
 })
 
@@ -135,13 +179,13 @@ describe('phase timing', () => {
     expect(DEMO_HOLD_MS[0]).toBeGreaterThanOrEqual(2000)
     expect(DEMO_HOLD_MS[1]).toBeGreaterThanOrEqual(2000)
     expect(DEMO_HOLD_MS[2]).toBeGreaterThanOrEqual(2000)
-    expect(DEMO_HOLD_MS[3]).toBeLessThan(DEMO_HOLD_MS[0])
-    expect(DEMO_CYCLE_MS).toBeGreaterThan(6000)
+    expect(DEMO_HOLD_MS[3]).toBeGreaterThanOrEqual(2000)
+    expect(DEMO_CYCLE_MS).toBeGreaterThanOrEqual(8000)
 
     expect(demoFrame(1000)).toEqual({ index: 0, weights: [1, 0, 0, 0] })
     expect(demoFrame(demoOffset(1) + 400).index).toBe(1)
     expect(demoFrame(demoOffset(2) + 400).index).toBe(2)
-    expect(demoFrame(demoOffset(3) + 200).index).toBe(3)
+    expect(demoFrame(demoOffset(3) + 400).index).toBe(3)
 
     const midFade = demoFrame(DEMO_HOLD_MS[0] - DEMO_FADE_MS / 2)
     expect(midFade.weights[0]).toBeGreaterThan(0.2)
