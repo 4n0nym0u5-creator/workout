@@ -20,7 +20,7 @@ npm run preview   # serve the production build
 ## What’s in the app
 
 - **Learn** — crouch, dive, bottom, and the snap back, with form cues, mistakes, muscles, the 9-week plan, easier and harder versions, and safety notes.
-- **Demo** — the three trainer photos loop as one rep, timed to the 1.5s / 1.75s / 2s / 3s tempo, with the phase name and cue on each beat. Switch to **Steps** to tap through and read the full cue. Swipe, the side arrows, or the left and right arrow keys.
+- **Demo** — the four trainer photos loop as one rep (crouch, dive, bottom, snap back), timed to the 1.5s / 1.75s / 2s / 3s tempo, with the phase name and cue on each beat. Switch to **Steps** to tap through and read the full cue. Swipe, the side arrows, or the left and right arrow keys.
 - **Train** — today’s plan stage or a custom target. Tap to count, or a tempo pacer that counts, ticks, and (optionally) vibrates once per rep. Rest timer between sets, then a finish screen.
 - **Log** — sessions in `localStorage` (`tyson-pushup-v1`): streaks, weekly totals, bests, progress toward 250, badges, a chart, edit, and delete. Export or import a JSON backup.
 - **PWA** — installable, and the production build caches the app shell and photos for offline use.
