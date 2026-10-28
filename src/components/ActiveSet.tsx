@@ -144,7 +144,7 @@ export function ActiveSet({
         <div className="mt-4 grid grid-cols-4 gap-2">
           {BEATS.map((item) => (
             <figure key={item.id} className="overflow-hidden rounded-xl border border-white/10">
-              <img src={phaseSrc(item.image)} alt="" className="aspect-video w-full object-cover" />
+              <img src={phaseSrc(item.image)} alt={item.alt} className="aspect-video w-full object-cover" />
               <figcaption className="px-1 py-1 text-center text-[10px] uppercase tracking-[0.12em] text-mute">{item.name}</figcaption>
             </figure>
           ))}

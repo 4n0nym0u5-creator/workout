@@ -164,12 +164,12 @@ export function PhaseReel({
               className="h-full w-full bg-black object-contain"
             />
           ) : (
-            <div aria-hidden="true" className="absolute inset-0">
+            <div className="absolute inset-0">
               {BEATS.map((item, index) => (
                 <img
                   key={item.id}
                   src={phaseSrc(item.image)}
-                  alt=""
+                  alt={index === active ? item.alt : ''}
                   draggable={false}
                   className="absolute inset-0 h-full w-full object-cover object-center"
                   style={{

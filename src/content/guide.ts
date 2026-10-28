@@ -108,7 +108,7 @@ export const VARIATIONS: Variation[] = [
     id: 'standard',
     group: 'standard',
     name: 'Standard',
-    detail: 'Full squat-to-push-up on the floor. Hands planted. Feet braced so they do not slide.',
+    detail: 'Full squat-to-push-up on the floor. Hands planted. Heels stay against the wall the whole rep.',
   },
   {
     id: 'incline',
@@ -167,8 +167,8 @@ export const FORM_CUES = [
   { title: 'Elbows at about 45°', detail: 'Not flared straight out to the sides.' },
   { title: 'Breathe', detail: 'In as you dive forward, out as you push back.' },
   {
-    title: 'Feet',
-    detail: 'Brace them against a wall or skirting board, or use a grippy mat so they do not slide.',
+    title: 'Heels on the wall',
+    detail: 'Heels stay against the wall the whole rep, from the crouch through the bottom and the snap back.',
   },
 ]
 
@@ -176,7 +176,7 @@ export const MISTAKES = [
   'Hips sagging at the bottom. That loads the lower back.',
   'Only half the push-up. The chest never gets low.',
   'Rushing so fast that form falls apart. Quality first, speed second.',
-  'Head dropping. Look slightly ahead of your hands.',
+  'Cranking the neck to look up. Head stays down, in line with the back.',
   'Knees slamming the floor. Knees stay off the ground the whole time.',
 ]
 

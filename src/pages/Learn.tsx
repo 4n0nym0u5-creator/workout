@@ -32,7 +32,7 @@ export function Learn() {
       <Kicker>The rep</Kicker>
       <h1 className="mt-2 font-display text-6xl leading-[0.85] md:text-7xl">Crouch. Dive. Bottom. Snap back.</h1>
       <p className="mt-3 max-w-xl text-mute">
-        A continuous squat-to-push-up. Hands stay planted. About 1.5–2 seconds a rep once it is clean. Step through it, or loop it at the tempo you will train.
+        A continuous squat-to-push-up. Hands stay planted and heels stay against the wall the whole rep. About 1.5–2 seconds a rep once it is clean. Step through it, or loop it at the tempo you will train.
       </p>
 
       <div className="mt-6 grid items-start gap-6 md:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">

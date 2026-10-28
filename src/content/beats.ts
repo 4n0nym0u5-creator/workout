@@ -4,6 +4,7 @@ export type Beat = {
   kicker: string
   short: string
   cue: string
+  alt: string
   image: 'crouch.jpg' | 'dive.jpg' | 'bottom.jpg'
 }
 
@@ -12,32 +13,36 @@ export const BEATS: Beat[] = [
     id: 'crouch',
     name: 'Crouch',
     kicker: '01',
-    short: 'Hips back. Hands planted. Arms straight.',
-    cue: 'Hands flat, slightly wider than shoulders, arms straight. Sit your hips back toward your heels, up on the balls of your feet. Back flat, hips just above knee height.',
+    short: 'Heels on the wall. Knees low, hips high, arms long.',
+    cue: 'Heels stay against the wall. Knees bent low with the shins along the floor, hips high, arms long reaching to the floor, head down.',
+    alt: 'Crouch: heels against the wall, knees bent low with the shins along the floor, hips high, arms long reaching to the floor, head down.',
     image: 'crouch.jpg',
   },
   {
     id: 'dive',
     name: 'Dive',
     kicker: '02',
-    short: 'Drive through the legs. Chest goes forward.',
-    cue: 'Drive hard through your legs to shoot your body forward. Hands stay planted. As you move forward, bend your elbows about 45° from your body and lower your chest.',
+    short: 'Launch and dive. Shoulders pass the hands, chest low.',
+    cue: 'Heels stay against the wall. Knees still bent, hips dropping, torso swooping forward so the shoulders pass the hands. Elbows bend and the chest stays low.',
+    alt: 'Launch and dive: heels on the wall, knees still bent, hips dropping, shoulders passing the hands, elbows bending, chest low.',
     image: 'dive.jpg',
   },
   {
     id: 'bottom',
     name: 'Bottom',
     kicker: '03',
-    short: 'Straight plank. Chest just off the floor.',
-    cue: 'Body in a straight plank, legs fully extended, chest just above the floor.',
+    short: 'Legs straight. Chest a fist above the floor.',
+    cue: 'Heels stay against the wall. Legs straight, body long and flat, chest a fist above the floor.',
+    alt: 'Bottom: heels on the wall, legs straight, body long and flat, chest a fist above the floor.',
     image: 'bottom.jpg',
   },
   {
     id: 'back',
     name: 'Snap back',
     kicker: '04',
-    short: 'Push hard and spring into the crouch.',
-    cue: 'Push up and back hard while bending the knees and hips to spring back into the crouch. Go straight into the next rep.',
+    short: 'Press up and snap the hips back into the crouch.',
+    cue: 'Press up and snap the hips back into the crouch. Heels stay against the wall the whole rep, then go straight into the next one.',
+    alt: 'Snap back into the crouch: heels against the wall, knees bent low, hips high, arms long, head down.',
     image: 'crouch.jpg',
   },
 ]
