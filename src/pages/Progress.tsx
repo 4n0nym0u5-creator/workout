@@ -411,9 +411,9 @@ function CloudCard({
 }) {
   const line =
     status.state === 'synced'
-      ? `Synced to Neon · ${new Date(status.at).toLocaleString()}`
+      ? `Synced to cloud · ${new Date(status.at).toLocaleString()}`
       : status.state === 'syncing'
-        ? 'Syncing with Neon…'
+        ? 'Syncing with cloud…'
         : status.state === 'local'
           ? status.message
           : status.state === 'error'
@@ -425,7 +425,7 @@ function CloudCard({
       <p className="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-ember">Cloud database</p>
       <p className="mt-2 text-sm leading-relaxed text-cream/90">{line}</p>
       <p className="mt-3 text-xs leading-relaxed text-mute">
-        Profile id identifies your log in Postgres. Keep a copy to restore on another phone or browser.
+        Profile id identifies your log in the cloud database. Keep a copy to restore on another phone or browser.
       </p>
       <label className="mt-3 block text-sm text-mute">
         Profile id

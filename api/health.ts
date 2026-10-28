@@ -6,7 +6,7 @@ export default async function handler(_req: VercelRequest, res: VercelResponse) 
     res.status(503).json({
       ok: false,
       database: false,
-      message: 'DATABASE_URL is missing. Connect Neon to the tyson-pushup Vercel project.',
+      message: 'No Postgres URL found. Connect Neon or Supabase to the tyson-pushup Vercel project.',
     })
     return
   }

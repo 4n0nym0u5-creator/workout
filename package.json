@@ -13,7 +13,7 @@
   "dependencies": {
     "@fontsource/bebas-neue": "^5.2.5",
     "@fontsource/outfit": "^5.2.5",
-    "@neondatabase/serverless": "^1.2.0",
+    "postgres": "^3.4.9",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-router-dom": "^7.9.4"

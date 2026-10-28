@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import type { JSONValue } from 'postgres'
 import { databaseConfigured, ensureSchema, getSql, isProfileId } from './_lib/db'
 
 type SyncBody = {
@@ -30,7 +31,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!databaseConfigured()) {
     res.status(503).json({
       error: 'database_unavailable',
-      message: 'Connect Neon Postgres to this Vercel project, then redeploy.',
+      message: 'Connect Neon or Supabase Postgres to this Vercel project, then redeploy.',
     })
     return
   }
@@ -51,8 +52,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         VALUES (${profileId}, '{}'::jsonb)
         ON CONFLICT (id) DO NOTHING
       `
-      const profileRows = await db`SELECT settings, updated_at FROM profiles WHERE id = ${profileId}`
-      const sessionRows = await db`
+      const profileRows = await db<{ settings: unknown; updated_at: string | Date }[]>`
+        SELECT settings, updated_at FROM profiles WHERE id = ${profileId}
+      `
+      const sessionRows = await db<{ payload: unknown }[]>`
         SELECT payload
         FROM sessions
         WHERE profile_id = ${profileId}
@@ -69,12 +72,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (req.method === 'PUT') {
       const body = (typeof req.body === 'string' ? JSON.parse(req.body) : req.body) as SyncBody
-      const settings = body?.settings ?? {}
+      const settings = (body?.settings ?? {}) as JSONValue
       const sessions = Array.isArray(body?.sessions) ? body.sessions.slice(0, 5000) : []
 
       await db`
         INSERT INTO profiles (id, settings, updated_at)
-        VALUES (${profileId}, ${JSON.stringify(settings)}::jsonb, now())
+        VALUES (${profileId}, ${db.json(settings)}, now())
         ON CONFLICT (id) DO UPDATE
         SET settings = EXCLUDED.settings, updated_at = now()
       `
@@ -94,8 +97,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             ${id},
             ${profileId},
             ${date},
-            ${completedAt}::timestamptz,
-            ${JSON.stringify(session)}::jsonb,
+            ${completedAt},
+            ${db.json(session as JSONValue)},
             now()
           )
           ON CONFLICT (id) DO UPDATE
