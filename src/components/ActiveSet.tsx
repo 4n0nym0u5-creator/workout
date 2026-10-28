@@ -141,11 +141,11 @@ export function ActiveSet({
           <PhaseReel pace="rep" tempoMs={tempoMs} progress={running || rep > 0 ? clock.progress : 0} paused={!running} compact />
         </div>
       ) : (
-        <div className="mt-4 grid grid-cols-4 gap-2">
+        <div className="mt-4 grid grid-cols-5 gap-1.5">
           {BEATS.map((item) => (
             <figure key={item.id} className="overflow-hidden rounded-xl border border-white/10">
               <img src={phaseSrc(item.image)} alt={item.alt} className="aspect-video w-full object-cover" />
-              <figcaption className="px-1 py-1 text-center text-[10px] uppercase tracking-[0.12em] text-mute">{item.name}</figcaption>
+              <figcaption className="px-0.5 py-1 text-center text-[9px] uppercase tracking-[0.08em] text-mute">{item.name}</figcaption>
             </figure>
           ))}
         </div>

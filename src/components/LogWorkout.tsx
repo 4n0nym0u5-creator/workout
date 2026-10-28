@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { optionFor, PLAN, stageById, variationById, VARIATIONS } from '../content/guide'
 import { useStore } from '../context/Store'
+import { addDays, clampIsoDate, formatRelativeDay, localDate } from '../lib/dates'
 import type { Difficulty, PlanStageId, SetLog, VariationId } from '../lib/types'
 import { Button, Kicker, Page, Pill } from './ui'
 
 export type LoggedWorkout = {
+  date: string
   stageId: PlanStageId | 'custom'
   stageLabel: string
   optionLabel: string
@@ -24,6 +26,11 @@ const DIFFICULTIES: { id: Difficulty; label: string }[] = [
 
 export function LogWorkout({ onSave, onCountLive }: { onSave: (entry: LoggedWorkout) => void; onCountLive: () => void }) {
   const { settings, updateSettings } = useStore()
+  const today = localDate(new Date())
+  const yesterday = localDate(addDays(new Date(), -1))
+  const earliest = localDate(addDays(new Date(), -730))
+  const [date, setDate] = useState(today)
+  const [pickDate, setPickDate] = useState(false)
   const [custom, setCustom] = useState(false)
   const [totalOnly, setTotalOnly] = useState(false)
   const [notes, setNotes] = useState('')
@@ -49,9 +56,29 @@ export function LogWorkout({ onSave, onCountLive }: { onSave: (entry: LoggedWork
   const asPlanned = !totalOnly && counts.length === setCount && counts.every((count) => count === repTarget)
   const loggedTotal = totalOnly ? total : counts.reduce((sum, count) => sum + count, 0)
   const label = custom ? `${setCount} × ${repTarget}` : option.label
+  const dayLabel = formatRelativeDay(date)
+  const saveLabel =
+    loggedTotal <= 0
+      ? 'Save workout'
+      : totalOnly
+        ? date === today
+          ? 'Log today'
+          : `Log ${dayLabel.toLowerCase()}`
+        : asPlanned
+          ? date === today
+            ? 'Done as planned'
+            : `Log ${dayLabel.toLowerCase()} as planned`
+          : date === today
+            ? 'Save workout'
+            : `Save for ${dayLabel.toLowerCase()}`
 
   function bumpSet(index: number, delta: number) {
     setCounts((current) => current.map((count, setIndex) => (setIndex === index ? clamp(count + delta, 0, 999) : count)))
+  }
+
+  function chooseDate(next: string, openPicker = false) {
+    setDate(clampIsoDate(next, earliest, today))
+    setPickDate(openPicker)
   }
 
   function save() {
@@ -60,6 +87,7 @@ export function LogWorkout({ onSave, onCountLive }: { onSave: (entry: LoggedWork
       ? [{ target: plannedTotal, completed: total }]
       : counts.map((completed) => ({ target: repTarget, completed }))
     onSave({
+      date: clampIsoDate(date, earliest, today),
       stageId: custom ? 'custom' : stage.id,
       stageLabel: custom ? 'Custom' : stage.name,
       optionLabel: totalOnly ? `Total · ${label}` : label,
@@ -74,18 +102,44 @@ export function LogWorkout({ onSave, onCountLive }: { onSave: (entry: LoggedWork
 
   return (
     <Page title="Log workout">
-      <Kicker>Today&apos;s session</Kicker>
+      <Kicker>{dayLabel}</Kicker>
       <h1 className="mt-2 font-display text-6xl leading-none">Log workout</h1>
       <p className="mt-3 max-w-md text-mute">
-        {stage.weeks} · {custom ? 'Custom' : stage.name} · {label}. The reps are already filled in. One tap saves the plan.
+        {stage.weeks} · {custom ? 'Custom' : stage.name} · {label}. Missed a day? Pick yesterday or an older date, then save.
       </p>
+
+      <div className="mt-5 flex flex-wrap gap-2">
+        <Pill pressed={date === today && !pickDate} onClick={() => chooseDate(today)}>
+          Today
+        </Pill>
+        <Pill pressed={date === yesterday && !pickDate} onClick={() => chooseDate(yesterday)}>
+          Yesterday
+        </Pill>
+        <Pill pressed={pickDate || (date !== today && date !== yesterday)} onClick={() => chooseDate(date === today ? yesterday : date, true)}>
+          Older
+        </Pill>
+      </div>
+      {pickDate || (date !== today && date !== yesterday) ? (
+        <label className="mt-3 block text-sm text-mute">
+          Workout date
+          <input
+            type="date"
+            data-testid="log-date"
+            value={date}
+            min={earliest}
+            max={today}
+            onChange={(event) => chooseDate(event.target.value, true)}
+            className="mt-1 h-12 w-full rounded-xl border border-line bg-ink px-3 text-cream"
+          />
+        </label>
+      ) : null}
 
       <div className="mt-5 flex flex-wrap gap-2">
         <Pill pressed={!totalOnly} onClick={() => setTotalOnly(false)}>
           By set
         </Pill>
         <Pill pressed={totalOnly} onClick={() => setTotalOnly(true)}>
-          Total today
+          Total for day
         </Pill>
         <Pill pressed={showPlan} onClick={() => setShowPlan((value) => !value)}>
           Change plan
@@ -143,8 +197,8 @@ export function LogWorkout({ onSave, onCountLive }: { onSave: (entry: LoggedWork
 
       {totalOnly ? (
         <div className="mt-5 rounded-3xl border border-line bg-panel p-4">
-          <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-mute">Total reps today</p>
-          <p className="mt-1 text-sm text-mute">Plan is {plannedTotal}. Change it if today was different.</p>
+          <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-mute">Total reps for {dayLabel.toLowerCase()}</p>
+          <p className="mt-1 text-sm text-mute">Plan is {plannedTotal}. Change it if that day was different.</p>
           <Stepper
             label="Total reps"
             value={total}
@@ -242,12 +296,12 @@ export function LogWorkout({ onSave, onCountLive }: { onSave: (entry: LoggedWork
       </div>
 
       <button type="button" className="mt-5 w-full text-sm font-semibold uppercase tracking-[0.16em] text-mute" onClick={onCountLive}>
-        Count each rep instead
+        Start a live session instead
       </button>
       <div className="h-20 md:hidden" aria-hidden="true" />
       <div className="fixed inset-x-0 bottom-[4.6rem] z-30 px-4 md:static md:bottom-auto md:mt-5 md:px-0">
         <Button className="w-full" data-testid="save-log" disabled={loggedTotal <= 0} onClick={save}>
-          {totalOnly ? 'Log today' : asPlanned ? 'Done as planned' : 'Save workout'}
+          {saveLabel}
         </Button>
       </div>
     </Page>

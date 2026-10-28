@@ -36,7 +36,7 @@ const VARIATION_IDS = new Set<VariationId>([
   'feet-up',
   'combo',
 ])
-const COUNT_MODES = new Set<CountMode>(['log', 'total', 'tap', 'tempo'])
+const COUNT_MODES = new Set<CountMode>(['log', 'total', 'sets', 'tap', 'tempo'])
 const DIFFICULTIES = new Set<Difficulty>(['easy', 'solid', 'hard'])
 
 export function emptyDatabase(): Database {
