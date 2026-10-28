@@ -4,6 +4,7 @@ import { ActiveSet } from '../components/ActiveSet'
 import { FinishScreen, type FinishSummary } from '../components/FinishScreen'
 import { FocusFrame, useLeaveGuard } from '../components/Shell'
 import { useTitle } from '../components/ui'
+import { LogWorkout, type LoggedWorkout } from '../components/LogWorkout'
 import { WorkoutSetup } from '../components/WorkoutSetup'
 import { nextStage } from '../content/guide'
 import { lineForFinish } from '../content/lines'
@@ -14,13 +15,13 @@ import { dayTotals, freshBadges, shouldCelebrate, stageSessions, stepUpReady } f
 import type { Session, SetLog, WorkoutPlan } from '../lib/types'
 import { Button } from '../components/ui'
 
-type Phase = 'setup' | 'work' | 'rest' | 'done'
+type Phase = 'log' | 'setup' | 'work' | 'rest' | 'done'
 
 export function Workout() {
   const navigate = useNavigate()
   const { sessions, settings, saveSession, updateSettings } = useStore()
   const { setDirty } = useLeaveGuard()
-  const [phase, setPhase] = useState<Phase>('setup')
+  const [phase, setPhase] = useState<Phase>('log')
   const [plan, setPlan] = useState<WorkoutPlan | null>(null)
   const [setIndex, setSetIndex] = useState(0)
   const [log, setLog] = useState<SetLog[]>([])
@@ -105,6 +106,7 @@ export function Workout() {
       variation: plan.variation,
       durationSec: Math.max(1, Math.round((completedAt.getTime() - (startedAt.current ?? completedAt.getTime())) / 1000)),
       notes: '',
+      difficulty: null,
     }
     const dayTotal = (dayTotals(sessions).get(session.date) ?? 0) + session.totalReps
     const previousBest = Math.max(0, ...[...dayTotals(sessions).values()])
@@ -141,6 +143,47 @@ export function Workout() {
     setPhase('rest')
   }
 
+  function finishLogged(entry: LoggedWorkout) {
+    const totalReps = entry.sets.reduce((total, set) => total + set.completed, 0)
+    if (totalReps <= 0) return
+    const completedAt = new Date()
+    const session: Session = {
+      id: crypto.randomUUID(),
+      date: localDate(completedAt),
+      completedAt: completedAt.toISOString(),
+      stageId: entry.stageId,
+      stageLabel: entry.stageLabel,
+      optionLabel: entry.optionLabel,
+      sets: entry.sets,
+      totalReps,
+      restSeconds: entry.restSeconds,
+      tempoMs: null,
+      countMode: entry.countMode,
+      variation: entry.variation,
+      durationSec: 0,
+      notes: entry.notes,
+      difficulty: entry.difficulty,
+    }
+    const dayTotal = (dayTotals(sessions).get(session.date) ?? 0) + session.totalReps
+    const previousBest = Math.max(0, ...[...dayTotals(sessions).values()])
+    const withSession = [...sessions, session]
+    const stageId = entry.stageId === 'custom' ? settings.stageId : entry.stageId
+    const ready = stepUpReady(withSession, stageId, completedAt)
+    const snoozed = settings.stepUpSnooze[stageId]
+    const count = stageSessions(withSession, stageId).length
+    saveSession(session)
+    setSummary({
+      session,
+      fresh: freshBadges(sessions, withSession),
+      celebrate: shouldCelebrate(sessions, session),
+      line: lineForFinish(totalReps + entry.sets.length * 13),
+      dayTotal,
+      previousBest: Number.isFinite(previousBest) ? previousBest : 0,
+      stepUp: ready && snoozed !== count ? ready : null,
+    })
+    setPhase('done')
+  }
+
   function askQuit() {
     if (logRef.current.length === 0 && phase === 'work') {
       setPhase('setup')
@@ -149,20 +192,24 @@ export function Workout() {
     setConfirmQuit(true)
   }
 
-  if (phase === 'setup' || !plan) {
-    return <WorkoutSetup onStart={begin} />
+  if (phase === 'log') {
+    return <LogWorkout onSave={finishLogged} onCountLive={() => setPhase('setup')} />
+  }
+
+  if (phase === 'setup' || ((phase === 'work' || phase === 'rest') && !plan)) {
+    return <WorkoutSetup onStart={begin} onBack={() => setPhase('log')} />
   }
 
   return (
     <FocusFrame>
-      {phase === 'work' ? (
+      {phase === 'work' && plan ? (
         <ActiveSet
           key={setIndex}
           setNumber={setIndex + 1}
           setCount={plan.sets}
           target={plan.reps}
           tempoMs={plan.tempoMs}
-          countMode={plan.countMode}
+          countMode={plan.countMode === 'tempo' ? 'tempo' : 'tap'}
           sound={plan.sound}
           haptics={plan.haptics}
           variation={plan.variation}
@@ -172,7 +219,7 @@ export function Workout() {
         />
       ) : null}
 
-      {phase === 'rest' ? (
+      {phase === 'rest' && plan ? (
         <div className="flex min-h-[70dvh] flex-col">
           <button type="button" onClick={askQuit} className="self-start text-sm font-semibold uppercase tracking-[0.16em] text-mute">
             Close
@@ -205,7 +252,10 @@ export function Workout() {
         <FinishScreen
           summary={summary}
           onDone={() => navigate('/')}
-          onAgain={() => setPhase('setup')}
+          onAgain={() => {
+            setPlan(null)
+            setPhase('log')
+          }}
           onMoveUp={() => {
             const upcoming = nextStage(settings.stageId)
             if (!upcoming) return

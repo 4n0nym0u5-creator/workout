@@ -138,7 +138,7 @@ export function ActiveSet({
 
       {countMode === 'tempo' ? (
         <div className="mt-4">
-          <PhaseReel tempoMs={tempoMs} mode="loop" progress={running || rep > 0 ? clock.progress : 0} paused={!running} compact />
+          <PhaseReel pace="rep" tempoMs={tempoMs} progress={running || rep > 0 ? clock.progress : 0} paused={!running} compact />
         </div>
       ) : (
         <div className="mt-4 grid grid-cols-4 gap-2">

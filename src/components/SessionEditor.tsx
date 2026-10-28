@@ -1,13 +1,20 @@
 import { useEffect, useRef, useState } from 'react'
 import { formatDay } from '../lib/dates'
-import type { Session, SetLog } from '../lib/types'
+import type { Difficulty, Session, SetLog } from '../lib/types'
 import { Button } from './ui'
 
 type Draft = {
   date: string
   notes: string
   sets: SetLog[]
+  difficulty: Difficulty | null
 }
+
+const DIFFICULTIES: { id: Difficulty; label: string }[] = [
+  { id: 'easy', label: 'Easy' },
+  { id: 'solid', label: 'Solid' },
+  { id: 'hard', label: 'Hard' },
+]
 
 export function SessionEditor({
   session,
@@ -31,6 +38,7 @@ export function SessionEditor({
       date: session.date,
       notes: session.notes,
       sets: session.sets.map((set) => ({ ...set })),
+      difficulty: session.difficulty,
     })
     setConfirmDelete(false)
   }
@@ -82,6 +90,7 @@ export function SessionEditor({
             notes: draft.notes.trim().slice(0, 280),
             sets: draft.sets,
             totalReps: total,
+            difficulty: draft.difficulty,
             completedAt: shiftTime(session.completedAt, draft.date),
           })
         }}
@@ -148,6 +157,22 @@ export function SessionEditor({
         >
           Add set
         </button>
+        <fieldset className="mt-4">
+          <legend className="text-sm text-mute">Difficulty, optional</legend>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {DIFFICULTIES.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                aria-pressed={draft.difficulty === item.id}
+                onClick={() => setDraft({ ...draft, difficulty: draft.difficulty === item.id ? null : item.id })}
+                className={`h-10 rounded-full px-3 text-sm font-semibold ${draft.difficulty === item.id ? 'bg-blood text-white' : 'bg-white/5 text-mute'}`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </fieldset>
         <label className="mt-4 block text-sm text-mute">
           Note
           <textarea

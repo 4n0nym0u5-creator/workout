@@ -11,7 +11,9 @@ export type VariationId =
   | 'feet-up'
   | 'combo'
 
-export type CountMode = 'tap' | 'tempo'
+export type CountMode = 'log' | 'total' | 'tap' | 'tempo'
+
+export type Difficulty = 'easy' | 'solid' | 'hard'
 
 export type SetLog = {
   target: number
@@ -33,6 +35,7 @@ export type Session = {
   variation: VariationId
   durationSec: number
   notes: string
+  difficulty: Difficulty | null
 }
 
 export type WorkoutPlan = {
@@ -74,7 +77,7 @@ export const DEFAULT_SETTINGS: Settings = {
   sound: true,
   haptics: true,
   variation: 'standard',
-  countMode: 'tap',
+  countMode: 'log',
   customSets: 5,
   customReps: 8,
   stepUpSnooze: {},

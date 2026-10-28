@@ -5,12 +5,13 @@ import { formatTempo } from '../lib/dates'
 import type { WorkoutPlan } from '../lib/types'
 import { Button, Kicker, Page, Pill } from './ui'
 
-export function WorkoutSetup({ onStart }: { onStart: (plan: WorkoutPlan) => void }) {
+export function WorkoutSetup({ onStart, onBack }: { onStart: (plan: WorkoutPlan) => void; onBack?: () => void }) {
   const { settings, updateSettings } = useStore()
   const [custom, setCustom] = useState(false)
   const stage = stageById(settings.stageId)
   const option = optionFor(stage, settings.optionId)
   const variation = variationById(settings.variation)
+  const [liveMode, setLiveMode] = useState<'tap' | 'tempo'>(settings.countMode === 'tempo' ? 'tempo' : 'tap')
   const tempo = settings.variation === 'slow' ? Math.max(settings.tempoMs, 3000) : settings.tempoMs
   const total = custom ? settings.customSets * settings.customReps : option.sets * option.reps
 
@@ -23,7 +24,7 @@ export function WorkoutSetup({ onStart }: { onStart: (plan: WorkoutPlan) => void
       reps: custom ? settings.customReps : option.reps,
       restSeconds: settings.restSeconds,
       tempoMs: tempo,
-      countMode: settings.countMode,
+      countMode: liveMode,
       variation: settings.variation,
       sound: settings.sound,
       haptics: settings.haptics,
@@ -32,9 +33,14 @@ export function WorkoutSetup({ onStart }: { onStart: (plan: WorkoutPlan) => void
 
   return (
     <Page title="Train">
-      <Kicker>Today&apos;s session</Kicker>
-      <h1 className="mt-2 font-display text-6xl leading-none">Build the day</h1>
-      <p className="mt-3 max-w-md text-mute">Warm up 3–5 minutes first. Arm circles, squats, a few easy push-ups.</p>
+      {onBack ? (
+        <button type="button" onClick={onBack} className="text-sm font-semibold uppercase tracking-[0.16em] text-mute">
+          Back to log
+        </button>
+      ) : null}
+      <Kicker>Optional counter</Kicker>
+      <h1 className="mt-2 font-display text-6xl leading-none">Count each rep</h1>
+      <p className="mt-3 max-w-md text-mute">Tap or follow the tempo. The usual way to record a workout is the log, without counting one by one.</p>
 
       <div className="mt-6 grid gap-2">
         {PLAN.map((item) => {
@@ -96,16 +102,16 @@ export function WorkoutSetup({ onStart }: { onStart: (plan: WorkoutPlan) => void
         <p className="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-mute">Count</p>
         <div className="mt-2 grid grid-cols-2 gap-2">
           <ModeCard
-            pressed={settings.countMode === 'tap'}
+            pressed={liveMode === 'tap'}
             title="Tap"
             detail="You count every rep."
-            onClick={() => updateSettings({ countMode: 'tap' })}
+            onClick={() => setLiveMode('tap')}
           />
           <ModeCard
-            pressed={settings.countMode === 'tempo'}
+            pressed={liveMode === 'tempo'}
             title="Tempo"
             detail={`Pacer at ${formatTempo(tempo)} per rep.`}
-            onClick={() => updateSettings({ countMode: 'tempo' })}
+            onClick={() => setLiveMode('tempo')}
           />
         </div>
       </div>
@@ -162,7 +168,7 @@ export function WorkoutSetup({ onStart }: { onStart: (plan: WorkoutPlan) => void
       </div>
 
       <Button className="mt-6 w-full" data-testid="start-session" onClick={start}>
-        Start session
+        Start counting
       </Button>
     </Page>
   )

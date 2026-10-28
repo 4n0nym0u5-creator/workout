@@ -3,6 +3,7 @@ import {
   DEFAULT_SETTINGS,
   STORAGE_KEY,
   type CountMode,
+  type Difficulty,
   type PlanStageId,
   type Session,
   type SetLog,
@@ -35,7 +36,8 @@ const VARIATION_IDS = new Set<VariationId>([
   'feet-up',
   'combo',
 ])
-const COUNT_MODES = new Set<CountMode>(['tap', 'tempo'])
+const COUNT_MODES = new Set<CountMode>(['log', 'total', 'tap', 'tempo'])
+const DIFFICULTIES = new Set<Difficulty>(['easy', 'solid', 'hard'])
 
 export function emptyDatabase(): Database {
   return { version: 1, sessions: [], settings: { ...DEFAULT_SETTINGS, stepUpSnooze: {} } }
@@ -74,7 +76,10 @@ function readSession(value: unknown): Session | null {
     : 'standard'
   const countMode = typeof value.countMode === 'string' && COUNT_MODES.has(value.countMode as CountMode)
     ? (value.countMode as CountMode)
-    : 'tap'
+    : 'log'
+  const difficulty = typeof value.difficulty === 'string' && DIFFICULTIES.has(value.difficulty as Difficulty)
+    ? (value.difficulty as Difficulty)
+    : null
   const completedAt = typeof value.completedAt === 'string' && !Number.isNaN(Date.parse(value.completedAt))
     ? value.completedAt
     : new Date(`${value.date}T12:00:00`).toISOString()
@@ -94,6 +99,7 @@ function readSession(value: unknown): Session | null {
     variation,
     durationSec: intIn(value.durationSec, 0, 86_400) ? value.durationSec : 0,
     notes: typeof value.notes === 'string' ? value.notes.slice(0, 280) : '',
+    difficulty,
   }
 }
 

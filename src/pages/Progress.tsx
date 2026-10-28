@@ -196,6 +196,7 @@ export function Progress() {
                           <p className="font-display text-4xl leading-none">{session.totalReps}</p>
                           <p className="mt-1 text-sm text-mute">
                             {formatDay(session.date)} · {session.stageLabel} · {session.optionLabel}
+                            {session.difficulty ? ` · ${session.difficulty}` : ''}
                           </p>
                           <p className="text-xs text-mute">
                             {session.sets.map((set) => set.completed).join(' · ')}
