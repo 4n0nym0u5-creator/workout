@@ -1,5 +1,5 @@
 export type Beat = {
-  id: 'crouch' | 'dive' | 'bottom' | 'back'
+  id: 'crouch' | 'dive' | 'bottom' | 'press' | 'snap'
   name: string
   kicker: string
   short: string
@@ -37,26 +37,39 @@ export const BEATS: Beat[] = [
     image: 'bottom.jpg',
   },
   {
-    id: 'back',
-    name: 'Snap back',
+    id: 'press',
+    name: 'Press',
     kicker: '04',
-    short: 'Chest low, heels on the wall. Press and snap the hips home.',
-    cue: 'Body long and flat with the chest low and heels still on the wall. Press through the floor and snap the hips back into the crouch, then go straight into the next rep.',
-    alt: 'Snap back: heels against the wall, legs straight, body long and flat, chest low above the floor, ready to press and snap the hips back into the crouch.',
+    short: 'Chest low, heels on the wall. Press and load the snap.',
+    cue: 'Body long and flat with the chest low and heels still on the wall. Press through the floor and load the hips for the snap home.',
+    alt: 'Press: heels against the wall, legs straight, body long and flat, chest low above the floor, ready to snap the hips back.',
     image: 'back.jpg',
+  },
+  {
+    id: 'snap',
+    name: 'Snap back',
+    kicker: '05',
+    short: 'Snap the hips home into the crouch. Same shape as the start.',
+    cue: 'Press and snap the hips back into the crouch — heels on the wall, knees low, hips high, arms long — then go straight into the next rep.',
+    alt: 'Snap back: return to the crouch with heels against the wall, knees bent low, hips high, arms long reaching to the floor.',
+    image: 'crouch.jpg',
   },
 ]
 
 /** Label windows across one workout rep. Together they last exactly one tempo. */
-export const BEAT_STARTS = [0, 0.25, 0.48, 0.7]
+export const BEAT_STARTS = [0, 0.2, 0.4, 0.6, 0.8]
 
 /**
  * Demo playback only. Each photo holds for about two seconds.
  * This clock is not the workout rep tempo.
  */
-export const DEMO_HOLD_MS = [2000, 2000, 2000, 2000] as const
+export const DEMO_HOLD_MS = [2000, 2000, 2000, 2000, 2000] as const
 export const DEMO_FADE_MS = 480
 export const DEMO_CYCLE_MS = DEMO_HOLD_MS.reduce((total, hold) => total + hold, 0)
+
+function emptyWeights() {
+  return BEATS.map(() => 0)
+}
 
 export function demoOffset(index: number) {
   let elapsed = 0
@@ -80,7 +93,7 @@ export function demoFrame(elapsedMs: number) {
     if (t < end || index === DEMO_HOLD_MS.length - 1) {
       const into = Math.min(hold, Math.max(0, t - start))
       const fadeStart = Math.max(0, hold - DEMO_FADE_MS)
-      const weights = [0, 0, 0, 0]
+      const weights = emptyWeights()
       if (into >= fadeStart && DEMO_FADE_MS > 0 && DEMO_FADE_MS < hold) {
         const next = (index + 1) % DEMO_HOLD_MS.length
         const fade = smoothstep((into - fadeStart) / DEMO_FADE_MS)
@@ -94,11 +107,13 @@ export function demoFrame(elapsedMs: number) {
     }
     start = end
   }
-  return { index: 0, weights: [1, 0, 0, 0] }
+  const fallback = emptyWeights()
+  fallback[0] = 1
+  return { index: 0, weights: fallback }
 }
 
-const CENTERS = [0.12, 0.36, 0.58, 0.84]
-const FALLOFF = 0.2
+const CENTERS = [0.1, 0.3, 0.5, 0.7, 0.9]
+const FALLOFF = 0.16
 
 export function beatIndex(progress: number) {
   const wrapped = ((progress % 1) + 1) % 1
@@ -128,7 +143,11 @@ export function beatWeights(progress: number) {
   const wrapped = ((progress % 1) + 1) % 1
   const raw = CENTERS.map((center) => Math.max(0, 1 - circularDistance(wrapped, center) / FALLOFF))
   const sum = raw.reduce((total, weight) => total + weight, 0)
-  if (sum <= 0) return [1, 0, 0, 0]
+  if (sum <= 0) {
+    const fallback = emptyWeights()
+    fallback[0] = 1
+    return fallback
+  }
   return raw.map((weight) => weight / sum)
 }
 

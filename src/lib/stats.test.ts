@@ -157,13 +157,14 @@ describe('badges and celebrations', () => {
 })
 
 describe('phase timing', () => {
-  it('walks crouch, dive, bottom, then snap back across one rep', () => {
+  it('walks crouch, dive, bottom, press, then snap back across one rep', () => {
     expect(beatIndex(0)).toBe(0)
-    expect(beatIndex(0.24)).toBe(0)
-    expect(beatIndex(0.25)).toBe(1)
-    expect(beatIndex(0.48)).toBe(2)
-    expect(beatIndex(0.7)).toBe(3)
-    expect(beatIndex(0.99)).toBe(3)
+    expect(beatIndex(0.19)).toBe(0)
+    expect(beatIndex(0.21)).toBe(1)
+    expect(beatIndex(0.41)).toBe(2)
+    expect(beatIndex(0.61)).toBe(3)
+    expect(beatIndex(0.81)).toBe(4)
+    expect(beatIndex(0.99)).toBe(4)
   })
 
   it('keeps a photo visible at every point in the loop', () => {
@@ -171,21 +172,22 @@ describe('phase timing', () => {
       const weights = beatWeights(step / 20)
       const sum = weights.reduce((total, weight) => total + weight, 0)
       expect(sum).toBeGreaterThan(0.99)
+      expect(weights).toHaveLength(5)
       expect(weights.some((weight) => weight > 0.4)).toBe(true)
     }
   })
 
   it('holds each demo phase for about two seconds and crossfades instead of cutting', () => {
+    expect(DEMO_HOLD_MS).toHaveLength(5)
     expect(DEMO_HOLD_MS[0]).toBeGreaterThanOrEqual(2000)
-    expect(DEMO_HOLD_MS[1]).toBeGreaterThanOrEqual(2000)
-    expect(DEMO_HOLD_MS[2]).toBeGreaterThanOrEqual(2000)
-    expect(DEMO_HOLD_MS[3]).toBeGreaterThanOrEqual(2000)
-    expect(DEMO_CYCLE_MS).toBeGreaterThanOrEqual(8000)
+    expect(DEMO_HOLD_MS[4]).toBeGreaterThanOrEqual(2000)
+    expect(DEMO_CYCLE_MS).toBeGreaterThanOrEqual(10_000)
 
-    expect(demoFrame(1000)).toEqual({ index: 0, weights: [1, 0, 0, 0] })
+    expect(demoFrame(1000)).toEqual({ index: 0, weights: [1, 0, 0, 0, 0] })
     expect(demoFrame(demoOffset(1) + 400).index).toBe(1)
     expect(demoFrame(demoOffset(2) + 400).index).toBe(2)
     expect(demoFrame(demoOffset(3) + 400).index).toBe(3)
+    expect(demoFrame(demoOffset(4) + 400).index).toBe(4)
 
     const midFade = demoFrame(DEMO_HOLD_MS[0] - DEMO_FADE_MS / 2)
     expect(midFade.weights[0]).toBeGreaterThan(0.2)

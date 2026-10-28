@@ -18,7 +18,10 @@ export function SetRound({ setNumber, setCount, target, variation, onBegin, onCo
   const [step, setStep] = useState<'go' | 'log'>('go')
   const [reps, setReps] = useState(target)
   const lastSet = setNumber === setCount
-  const cue = variation === 'pause' ? 'Hold the bottom for a second, then snap home.' : 'Heels on the wall. Crouch, dive, bottom, snap back.'
+  const cue =
+    variation === 'pause'
+      ? 'Hold the bottom for a second, then snap home.'
+      : 'Heels on the wall. Crouch, dive, bottom, press, snap back.'
 
   function openLog() {
     onBegin()
@@ -54,11 +57,11 @@ export function SetRound({ setNumber, setCount, target, variation, onBegin, onCo
 
       {step === 'go' ? (
         <>
-          <div className="mt-5 grid grid-cols-4 gap-2">
+          <div className="mt-5 grid grid-cols-5 gap-1.5">
             {BEATS.map((item) => (
               <figure key={item.id} className="overflow-hidden rounded-xl border border-white/10">
                 <img src={phaseSrc(item.image)} alt="" className="aspect-video w-full object-cover" />
-                <figcaption className="px-1 py-1 text-center text-[10px] uppercase tracking-[0.12em] text-mute">{item.name}</figcaption>
+                <figcaption className="px-0.5 py-1 text-center text-[9px] uppercase tracking-[0.08em] text-mute">{item.name}</figcaption>
               </figure>
             ))}
           </div>
