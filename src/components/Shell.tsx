@@ -71,7 +71,7 @@ export function Shell() {
             <span className="mt-1 block uppercase tracking-[0.18em]">day streak</span>
           </p>
         </aside>
-        <main id="main">
+        <main id="main" className="min-w-0">
           <Outlet />
         </main>
       </div>

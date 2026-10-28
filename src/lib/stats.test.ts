@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { beatIndex, beatWeights } from '../content/beats'
+import { DEMO_CYCLE_MS, DEMO_FADE_MS, DEMO_HOLD_MS, beatIndex, beatWeights, demoFrame, demoOffset } from '../content/beats'
 import { earnedBadges, behindReason, bestDay, currentStreak, isClean, longestStreak, shouldCelebrate, stepUpReady, weekDays } from './stats'
 import type { Session, SetLog } from './types'
 
@@ -25,6 +25,7 @@ function session(partial: Partial<Session> & { date: string }): Session {
     variation: 'standard',
     durationSec: 120,
     notes: '',
+    difficulty: null,
   }
 }
 
@@ -128,5 +129,24 @@ describe('phase timing', () => {
       expect(sum).toBeGreaterThan(0.99)
       expect(weights.some((weight) => weight > 0.4)).toBe(true)
     }
+  })
+
+  it('holds each demo phase for about two seconds and crossfades instead of cutting', () => {
+    expect(DEMO_HOLD_MS[0]).toBeGreaterThanOrEqual(2000)
+    expect(DEMO_HOLD_MS[1]).toBeGreaterThanOrEqual(2000)
+    expect(DEMO_HOLD_MS[2]).toBeGreaterThanOrEqual(2000)
+    expect(DEMO_HOLD_MS[3]).toBeLessThan(DEMO_HOLD_MS[0])
+    expect(DEMO_CYCLE_MS).toBeGreaterThan(6000)
+
+    expect(demoFrame(1000)).toEqual({ index: 0, weights: [1, 0, 0, 0] })
+    expect(demoFrame(demoOffset(1) + 400).index).toBe(1)
+    expect(demoFrame(demoOffset(2) + 400).index).toBe(2)
+    expect(demoFrame(demoOffset(3) + 200).index).toBe(3)
+
+    const midFade = demoFrame(DEMO_HOLD_MS[0] - DEMO_FADE_MS / 2)
+    expect(midFade.weights[0]).toBeGreaterThan(0.2)
+    expect(midFade.weights[1]).toBeGreaterThan(0.2)
+    expect(midFade.weights[0] + midFade.weights[1]).toBeCloseTo(1, 5)
+    expect(midFade.weights[2]).toBe(0)
   })
 })

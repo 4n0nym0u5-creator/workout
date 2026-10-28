@@ -11,7 +11,6 @@ export function Learn() {
   const navigate = useNavigate()
   const reduced = useReducedMotion()
   const { settings, updateSettings } = useStore()
-  const [mode, setMode] = useState<'loop' | 'step'>('step')
   const [beat, setBeat] = useState(0)
   const current = stageById(settings.stageId)
 
@@ -19,44 +18,31 @@ export function Learn() {
     const onKey = (event: KeyboardEvent) => {
       const target = event.target
       if (target instanceof HTMLElement && target.closest('input, textarea, select, button')) return
-      if (mode !== 'step') return
       if (event.key === 'ArrowRight') setBeat((value) => (value + 1) % BEATS.length)
       if (event.key === 'ArrowLeft') setBeat((value) => (value + BEATS.length - 1) % BEATS.length)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [mode])
+  }, [])
 
   return (
     <Page title="Learn" wide>
       <Kicker>The rep</Kicker>
       <h1 className="mt-2 font-display text-6xl leading-[0.85] md:text-7xl">Crouch. Dive. Bottom. Snap back.</h1>
       <p className="mt-3 max-w-xl text-mute">
-        A continuous squat-to-push-up. Hands stay planted and heels stay against the wall the whole rep. About 1.5–2 seconds a rep once it is clean. Step through it, or loop it at the tempo you will train.
+        A continuous squat-to-push-up. Hands stay planted and heels stay against the wall the whole rep. The demo holds each phase so you can see it. Workout tempo is separate, about 1.5–2 seconds a rep once it is clean.
       </p>
 
       <div className="mt-6 grid items-start gap-6 md:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
         <div className="md:sticky md:top-6">
-          <PhaseReel
-            tempoMs={settings.tempoMs}
-            mode={reduced ? 'step' : mode}
-            beat={beat}
-            onBeatChange={setBeat}
-            onModeChange={setMode}
-            onTempoChange={(tempoMs) => updateSettings({ tempoMs })}
-            showChrome
-            reducedMotion={reduced}
-          />
+          <PhaseReel beat={beat} onBeatChange={setBeat} showChrome reducedMotion={reduced} />
         </div>
         <ol className="grid gap-2">
           {BEATS.map((item, index) => (
             <li key={item.id}>
               <button
                 type="button"
-                onClick={() => {
-                  setMode('step')
-                  setBeat(index)
-                }}
+                onClick={() => setBeat(index)}
                 className={`w-full rounded-2xl border px-4 py-3 text-left ${index === beat ? 'border-blood bg-blood/10' : 'border-line bg-panel'}`}
               >
                 <span className="font-display text-2xl text-ember">{item.kicker}</span>

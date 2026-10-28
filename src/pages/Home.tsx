@@ -13,8 +13,6 @@ export function Home() {
   const navigate = useNavigate()
   const reduced = useReducedMotion()
   const { sessions, settings, updateSettings } = useStore()
-  const [mode, setMode] = useState<'loop' | 'step'>(reduced ? 'step' : 'loop')
-  const [beat, setBeat] = useState(0)
   const now = new Date()
   const stage = stageById(settings.stageId)
   const option = optionFor(stage, settings.optionId)
@@ -42,16 +40,7 @@ export function Home() {
       </div>
 
       <div className="mt-6">
-        <PhaseReel
-          tempoMs={settings.tempoMs}
-          mode={reduced ? 'step' : mode}
-          beat={beat}
-          onBeatChange={setBeat}
-          onModeChange={setMode}
-          onTempoChange={(tempoMs) => updateSettings({ tempoMs })}
-          showChrome
-          reducedMotion={reduced}
-        />
+        <PhaseReel showChrome reducedMotion={reduced} />
       </div>
 
       <section className="relative mt-6 overflow-hidden rounded-[1.7rem] border border-white/10 bg-panel p-5">
@@ -67,7 +56,7 @@ export function Home() {
           {variation.id === 'standard' ? '' : ` · ${variation.name}`}
         </p>
         <Button className="mt-5 w-full" onClick={() => navigate('/workout')}>
-          Start session
+          Log workout
         </Button>
       </section>
 
