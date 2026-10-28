@@ -44,10 +44,10 @@ export function Progress() {
     replaceAll,
     mergeSessions,
     storageWarning,
-    cloudStatus,
-    profileId,
+    user,
+    syncStatus,
     syncNow,
-    adoptProfile,
+    logout,
   } = useStore()
   const [range, setRange] = useState<Range>('8w')
   const [editing, setEditing] = useState<Session | null>(null)
@@ -55,8 +55,6 @@ export function Progress() {
   const [importError, setImportError] = useState<string | null>(null)
   const [confirmReplace, setConfirmReplace] = useState(false)
   const [confirmErase, setConfirmErase] = useState(false)
-  const [profileDraft, setProfileDraft] = useState(profileId)
-  const [profileError, setProfileError] = useState<string | null>(null)
   const [syncBusy, setSyncBusy] = useState(false)
   const now = new Date()
   const stage = stageById(settings.stageId)
@@ -167,33 +165,21 @@ export function Progress() {
           />
         ) : null}
         {storageWarning ? <p className="rounded-2xl border border-gold/40 bg-gold/10 px-4 py-3 text-sm">{storageWarning}</p> : null}
-        <CloudCard
-          status={cloudStatus}
-          profileId={profileId}
-          profileDraft={profileDraft}
-          profileError={profileError}
+        <AccountCard
+          user={user}
+          status={syncStatus}
           busy={syncBusy}
-          onDraftChange={setProfileDraft}
+          onLogin={() => navigate('/account')}
           onSync={async () => {
             setSyncBusy(true)
-            setProfileError(null)
             try {
               await syncNow()
             } finally {
               setSyncBusy(false)
             }
           }}
-          onAdopt={async () => {
-            setSyncBusy(true)
-            setProfileError(null)
-            try {
-              await adoptProfile(profileDraft.trim())
-              setProfileDraft(profileDraft.trim())
-            } catch (error) {
-              setProfileError(error instanceof Error ? error.message : 'Could not switch profile.')
-            } finally {
-              setSyncBusy(false)
-            }
+          onLogout={() => {
+            void logout()
           }}
         />
       </div>
@@ -288,7 +274,7 @@ export function Progress() {
       <section className="mt-8 rounded-3xl border border-line p-4">
         <h2 className="font-display text-4xl leading-none">Backup</h2>
         <p className="mt-2 text-sm text-mute">
-          Workouts sync to Neon Postgres when the cloud database is connected. This browser also keeps a local cache (`tyson-pushup-v1`). Export JSON anytime as a spare copy.
+          Log in to keep workouts on your account across devices. This browser also keeps a local cache (`tyson-pushup-v1`). Export JSON anytime as a spare copy.
         </p>
         <div className="mt-4 flex flex-wrap gap-2">
           <Button className="h-12 w-auto px-5 text-2xl" data-testid="export-log" onClick={exportLog}>
@@ -390,72 +376,56 @@ function Mini({ label, value }: { label: string; value: string }) {
   )
 }
 
-function CloudCard({
+function AccountCard({
+  user,
   status,
-  profileId,
-  profileDraft,
-  profileError,
   busy,
-  onDraftChange,
+  onLogin,
   onSync,
-  onAdopt,
+  onLogout,
 }: {
-  status: ReturnType<typeof useStore>['cloudStatus']
-  profileId: string
-  profileDraft: string
-  profileError: string | null
+  user: ReturnType<typeof useStore>['user']
+  status: ReturnType<typeof useStore>['syncStatus']
   busy: boolean
-  onDraftChange: (value: string) => void
+  onLogin: () => void
   onSync: () => Promise<void>
-  onAdopt: () => Promise<void>
+  onLogout: () => void
 }) {
+  if (!user) {
+    return (
+      <aside className="rounded-3xl border border-line bg-panel p-4">
+        <p className="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-ember">Account</p>
+        <p className="mt-2 text-sm leading-relaxed text-cream/90">
+          Progress stays in this browser until you log in. Create an account to keep the same log on another device.
+        </p>
+        <Button className="mt-3 h-11 w-auto px-4 text-2xl" onClick={onLogin}>
+          Log in
+        </Button>
+      </aside>
+    )
+  }
+
   const line =
     status.state === 'synced'
-      ? `Synced to cloud · ${new Date(status.at).toLocaleString()}`
+      ? `Saved to account · ${new Date(status.at).toLocaleString()}`
       : status.state === 'syncing'
-        ? 'Syncing with cloud…'
-        : status.state === 'local'
+        ? 'Saving to your account…'
+        : status.state === 'local' || status.state === 'error'
           ? status.message
-          : status.state === 'error'
-            ? status.message
-            : 'Checking cloud database…'
+          : 'Logged in'
 
   return (
     <aside className="rounded-3xl border border-line bg-panel p-4">
-      <p className="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-ember">Cloud database</p>
+      <p className="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-ember">Account</p>
+      <p className="mt-2 font-display text-3xl leading-none">{user.email}</p>
       <p className="mt-2 text-sm leading-relaxed text-cream/90">{line}</p>
-      <p className="mt-3 text-xs leading-relaxed text-mute">
-        Profile id identifies your log in the cloud database. Keep a copy to restore on another phone or browser.
-      </p>
-      <label className="mt-3 block text-sm text-mute">
-        Profile id
-        <input
-          value={profileDraft}
-          onChange={(event) => onDraftChange(event.target.value)}
-          spellCheck={false}
-          className="mt-1 h-11 w-full rounded-xl border border-line bg-ink px-3 font-mono text-xs text-cream"
-        />
-      </label>
-      {profileError ? <p className="mt-2 text-sm text-ember">{profileError}</p> : null}
       <div className="mt-3 flex flex-wrap gap-2">
         <Button className="h-11 w-auto px-4 text-2xl" disabled={busy} onClick={() => void onSync()}>
-          Sync now
+          Save now
         </Button>
-        <Button
-          tone="ghost"
-          className="h-11 w-auto px-4 text-2xl"
-          disabled={busy || profileDraft.trim() === profileId}
-          onClick={() => void onAdopt()}
-        >
-          Load profile
+        <Button tone="ghost" className="h-11 w-auto px-4 text-2xl" onClick={onLogout}>
+          Log out
         </Button>
-        <button
-          type="button"
-          className="h-11 rounded-2xl px-4 text-sm font-semibold uppercase tracking-[0.14em] text-mute"
-          onClick={() => void navigator.clipboard?.writeText(profileId)}
-        >
-          Copy id
-        </button>
       </div>
     </aside>
   )

@@ -1,28 +1,14 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import type { JSONValue } from 'postgres'
-import { databaseConfigured, ensureSchema, getSql, isProfileId } from './_lib/db.js'
+import { userFromRequest } from './_lib/auth.js'
+import { databaseConfigured, ensureSchema, getSql } from './_lib/db.js'
 
 type SyncBody = {
   settings?: unknown
   sessions?: unknown[]
 }
 
-function readProfileId(req: VercelRequest) {
-  const header = req.headers['x-profile-id']
-  const fromHeader = Array.isArray(header) ? header[0] : header
-  const fromQuery = typeof req.query.profileId === 'string' ? req.query.profileId : null
-  const value = fromHeader || fromQuery
-  return isProfileId(value) ? value : null
-}
-
-function cors(res: VercelResponse) {
-  res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'GET,PUT,OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Profile-Id')
-}
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  cors(res)
   if (req.method === 'OPTIONS') {
     res.status(204).end()
     return
@@ -31,20 +17,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!databaseConfigured()) {
     res.status(503).json({
       error: 'database_unavailable',
-      message: 'Connect Neon or Supabase Postgres to this Vercel project, then redeploy.',
+      message: 'Connect Postgres to this Vercel project, then redeploy.',
     })
-    return
-  }
-
-  const profileId = readProfileId(req)
-  if (!profileId) {
-    res.status(400).json({ error: 'invalid_profile', message: 'Send a UUID profile id in X-Profile-Id.' })
     return
   }
 
   try {
     await ensureSchema()
+    const user = await userFromRequest(req)
+    if (!user) {
+      res.status(401).json({ error: 'unauthorized', message: 'Log in to save progress to your account.' })
+      return
+    }
+
     const db = getSql()
+    const profileId = user.id
 
     if (req.method === 'GET') {
       await db`
@@ -62,7 +49,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         ORDER BY date DESC, completed_at DESC
       `
       res.status(200).json({
-        profileId,
+        userId: profileId,
+        email: user.email,
         settings: profileRows[0]?.settings ?? {},
         sessions: sessionRows.map((row) => row.payload),
         updatedAt: profileRows[0]?.updated_at ?? null,
@@ -111,7 +99,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         `
       }
 
-      res.status(200).json({ ok: true, profileId, sessionCount: sessions.length })
+      res.status(200).json({ ok: true, userId: profileId, sessionCount: sessions.length })
       return
     }
 

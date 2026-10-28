@@ -38,6 +38,25 @@ export async function ensureSchema() {
     ready = (async () => {
       const db = getSql()
       await db`
+        CREATE TABLE IF NOT EXISTS users (
+          id TEXT PRIMARY KEY,
+          email TEXT NOT NULL UNIQUE,
+          password_hash TEXT NOT NULL,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        )
+      `
+      await db`
+        CREATE TABLE IF NOT EXISTS auth_tokens (
+          token_hash TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          expires_at TIMESTAMPTZ NOT NULL,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        )
+      `
+      await db`CREATE INDEX IF NOT EXISTS auth_tokens_user_idx ON auth_tokens (user_id)`
+      await db`CREATE INDEX IF NOT EXISTS auth_tokens_expires_idx ON auth_tokens (expires_at)`
+
+      await db`
         CREATE TABLE IF NOT EXISTS profiles (
           id TEXT PRIMARY KEY,
           settings JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -62,8 +81,4 @@ export async function ensureSchema() {
     })
   }
   await ready
-}
-
-export function isProfileId(value: unknown): value is string {
-  return typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
 }
