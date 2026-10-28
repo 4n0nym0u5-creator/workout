@@ -73,3 +73,25 @@ export function formatTempo(ms: number) {
 export function weekKey(date: Date) {
   return localDate(startOfWeek(date))
 }
+
+/** Noon on a past day; "now" when the ISO date is today. */
+export function completedAtFor(date: string, now = new Date()) {
+  if (date === localDate(now)) return new Date(now.getTime())
+  const day = parseDate(date)
+  day.setHours(12, 0, 0, 0)
+  return day
+}
+
+export function clampIsoDate(value: string, min: string, max: string) {
+  if (!isIsoDate(value)) return max
+  if (value < min) return min
+  if (value > max) return max
+  return value
+}
+
+export function formatRelativeDay(iso: string, now = new Date()) {
+  const today = localDate(now)
+  if (iso === today) return 'Today'
+  if (iso === localDate(addDays(now, -1))) return 'Yesterday'
+  return formatDay(iso)
+}

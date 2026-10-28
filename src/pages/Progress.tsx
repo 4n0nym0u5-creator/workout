@@ -27,6 +27,7 @@ import {
   weekDays,
   weekReps,
   weekSeries,
+  weeklyTotalsSeries,
 } from '../lib/stats'
 import type { PlanStageId, Session } from '../lib/types'
 
@@ -53,7 +54,16 @@ export function Progress() {
   const showStep = ready !== null && settings.stepUpSnooze[settings.stageId] !== stageCount
   const dates = uniqueDates(sessions)
   const allDays = dates.length === 0 ? 14 : Math.min(120, Math.max(14, daysBetween(dates[0], localDate(now)) + 1))
-  const series = range === 'week' ? weekSeries(sessions, now) : dailySeries(sessions, now, range === '8w' ? 56 : allDays)
+  const allWeeks = dates.length === 0 ? 8 : Math.min(26, Math.max(8, Math.ceil(allDays / 7)))
+  const series =
+    range === 'week'
+      ? weekSeries(sessions, now)
+      : range === '8w'
+        ? weeklyTotalsSeries(sessions, now, 8)
+        : allDays <= 21
+          ? dailySeries(sessions, now, allDays)
+          : weeklyTotalsSeries(sessions, now, allWeeks)
+  const chartGoal = range === 'week' ? GOAL_REPS : undefined
   const todayKey = localDate(now)
   const groups = useMemo(() => groupSessions(sessions, todayKey), [sessions, todayKey])
 
@@ -145,7 +155,12 @@ export function Progress() {
 
       <section className="mt-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="font-display text-4xl leading-none">Reps over time</h2>
+          <div>
+            <h2 className="font-display text-4xl leading-none">Reps over time</h2>
+            <p className="mt-1 text-sm text-mute">
+              {range === 'week' ? 'Daily reps this week' : range === '8w' ? 'Weekly totals for eight weeks' : 'Your full climb'}
+            </p>
+          </div>
           <div className="flex gap-1">
             <Pill pressed={range === 'week'} onClick={() => setRange('week')}>
               Week
@@ -159,8 +174,11 @@ export function Progress() {
           </div>
         </div>
         <div className="mt-3 rounded-3xl border border-line bg-panel p-4">
-          {sessions.length === 0 ? <p className="mb-3 text-sm text-mute">Finish a workout and the days start to stack.</p> : null}
-          <RepChart series={series} />
+          <RepChart
+            series={series}
+            goal={chartGoal}
+            emptyHint="Log a workout — including past days — and the chart fills in."
+          />
         </div>
       </section>
 
@@ -180,9 +198,14 @@ export function Progress() {
       </section>
 
       <section className="mt-8">
-        <h2 className="font-display text-4xl leading-none">Sessions</h2>
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <h2 className="font-display text-4xl leading-none">Sessions</h2>
+          <button type="button" className="text-sm font-semibold uppercase tracking-[0.14em] text-ember" onClick={() => navigate('/workout')}>
+            Add past day
+          </button>
+        </div>
         {sessions.length === 0 ? (
-          <p className="mt-3 text-mute">No sessions yet. The floor is undefeated until you show up.</p>
+          <p className="mt-3 text-mute">No sessions yet. Log today or tap Add past day if you trained off-app.</p>
         ) : (
           <div className="mt-3 grid gap-5">
             {groups.map((group) => (
@@ -219,7 +242,9 @@ export function Progress() {
 
       <section className="mt-8 rounded-3xl border border-line p-4">
         <h2 className="font-display text-4xl leading-none">Backup</h2>
-        <p className="mt-2 text-sm text-mute">The log lives in this browser. Export JSON before you clear it, and import it on another device.</p>
+        <p className="mt-2 text-sm text-mute">
+          There is no server database. Progress is saved only in this browser&apos;s local storage (`tyson-pushup-v1`). Export JSON before you clear it, and import it on another device.
+        </p>
         <div className="mt-4 flex flex-wrap gap-2">
           <Button className="h-12 w-auto px-5 text-2xl" data-testid="export-log" onClick={exportLog}>
             Export
